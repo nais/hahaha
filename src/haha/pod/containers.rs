@@ -2,13 +2,13 @@ use super::app_pod::AppPod;
 use k8s_openapi::api::core::v1::{Pod, ContainerStatus};
 use anyhow::{anyhow, Result};
 
-pub trait ContainersExt {
+pub trait Sidecars {
     fn running_sidecars(&self) -> Result<Vec<ContainerStatus>>;
     fn main_container(&self) -> Result<ContainerStatus>;
     fn sidecars(&self) -> anyhow::Result<Vec<ContainerStatus>>;
 }
 
-impl ContainersExt for Pod {
+impl Sidecars for Pod {
     fn sidecars(&self) -> anyhow::Result<Vec<ContainerStatus>> {
         let main_container = self.main_container()?;
         if !main_container.is_terminated() {

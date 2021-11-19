@@ -1,4 +1,4 @@
-use super::containers::ContainersExt;
+use super::containers::Sidecars;
 use crate::{actions::Action, haha::api::Destroying};
 use async_trait::async_trait;
 use k8s_openapi::api::core::v1::{Pod};
