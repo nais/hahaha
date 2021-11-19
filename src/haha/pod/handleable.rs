@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use k8s_openapi::api::core::v1::{Pod};
 use kube::{api::Api, Client, ResourceExt};
 use std::collections::BTreeMap;
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 
 #[async_trait]
 pub trait Handleable {
@@ -23,6 +23,7 @@ impl Handleable for Pod {
             return;
         }
 
+        info!("{} needs help shutting down some residual containers!", self.name());
         // we have to create a namespaced api to the target pod's namespace 
         // in order to later `exec` (inside perform), since we can't pass a namespace into `exec`.
         // idk if this creation of a new api for every eligible pod is expensive..

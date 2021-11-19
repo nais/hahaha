@@ -25,10 +25,10 @@ impl Destroying for Api<Pod> {
                         .container(container_name)
                         .stdout(false)
                 ).await {
-                    Ok(_) => (),
+                    Ok(_) => info!("Sent `{}` to {}@{}", action.command.as_ref().unwrap(), container_name, pod_name),
                     Err(err) => {
-                        error!("Something bad happened while trying to exec into {} ({}): {}", 
-                            pod_name, container_name, err);
+                        error!("Something bad happened while trying to exec into {}@{}: {}", 
+                            container_name, pod_name, err);
                     }
                 };
             },
