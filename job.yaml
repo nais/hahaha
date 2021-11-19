@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+  labels:
+    app: pi
+spec:
+  template:
+    metadata:
+      labels:
+        app: pi
+        nais.io/ginuudan: enabled
+    spec:
+      restartPolicy: OnFailure
+      serviceAccount: unleash
+      containers:
+      - name: pi
+        image: navikt/perl
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(5000)"]
+      - name: cloudsql-proxy
+        image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+        command:
+          - /cloud_sql_proxy
+          - -term_timeout=30s
+          - -instances=aura-dev-d9f5:europe-north1:unleash-dev=tcp:5432
