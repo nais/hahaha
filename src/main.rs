@@ -3,32 +3,65 @@ use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams},
     runtime::{utils::try_flatten_applied, watcher},
-    Client,
+    Client, ResourceExt,
 };
+use tracing::{info, warn};
 
 mod actions;
-mod haha;
-use haha::Handleable;
+mod api;
+mod pod;
+
+use api::Destroyer;
+use pod::Sidecars;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     std::env::set_var("RUST_LOG", "info,kube=warn");
     tracing_subscriber::fmt::init();
-    
-    let actions = actions::generate()?;
+
+    let actions = actions::generate();
     let client = Client::try_default().await?;
 
     let pods: Api<Pod> = Api::all(client.clone());
-    let lp = ListParams::default()
-        .timeout(30)
-        // I'm leaning towards using labels as a filter for target pods.. so I'm using it here
-        .labels("nais.io/ginuudan=enabled");
+    let lp = ListParams::default().timeout(30).labels("nais.io/ginuudan=enabled");
 
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
 
     while let Some(pod) = ew.try_next().await? {
-        pod.handle(&client, &actions).await?;
+        let running_sidecars = pod.sidecars().unwrap_or_else(|err| {
+            info!("Getting running sidecars for {}: {}", pod.name(), err);
+            Vec::new()
+        });
+        if running_sidecars.is_empty() {
+            // Move onto the next iteration if there's nothing to look at
+            continue;
+        }
+
+        let namespace = match pod.namespace() {
+            Some(namespace) => namespace,
+            None => "default".into(),
+        };
+        // we need a namespaced api to `exec` and `portforward` into the target pod.
+        let api: Api<Pod> = Api::namespaced(client.clone(), &namespace);
+
+        info!("{} in namespace {} needs help shutting down some residual containers!", pod.name(), namespace);
+
+        for sidecar in running_sidecars {
+            let sidecar_name = sidecar.name;
+            let action = match actions.get(&sidecar_name) {
+                Some(action) => action,
+                None => {
+                    warn!(
+                        "I don't know how to shut down {} (in {} in namespace {})",
+                        sidecar_name,
+                        pod.name(),
+                        namespace
+                    );
+                    continue;
+                }
+            };
+            api.shutdown(action, &pod.name(), &sidecar_name).await?;
+        }
     }
     Ok(())
 }
-
