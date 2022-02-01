@@ -8,19 +8,21 @@ use tracing::{error, info, warn};
 
 #[async_trait]
 pub trait Handleable {
-    async fn handle(self, client: &Client, actions: &BTreeMap<String, Action>);
+    async fn handle(self, client: &Client, actions: &BTreeMap<String, Action>) -> anyhow::Result<()>;
 }
 
 #[async_trait]
 impl Handleable for Pod {
-    async fn handle(self, client: &Client, actions: &BTreeMap<String, Action>) {
+    async fn handle(self, client: &Client, actions: &BTreeMap<String, Action>) -> anyhow::Result<()> {
         let running_sidecars = self.sidecars().unwrap_or_else(|err| {
-            error!("Getting running sidecars for {}: {}", self.name(), err);
+            // this might also be hit on a job's startup
+            // todo: maybe fix it and eliminate unnecessary logs?
+            info!("Getting running sidecars for {}: {}", self.name(), err);
             Vec::new()
         });
         if running_sidecars.is_empty() {
             // To avoid setting up a useless api
-            return;
+            return Ok(());
         }
 
         info!("{} needs help shutting down some residual containers!", self.name());
@@ -42,7 +44,8 @@ impl Handleable for Pod {
                     continue;
                 }
             };
-            api.shutdown(action, &self.name(), &name).await;
+            api.shutdown(action, &self.name(), &name).await?;
         }
+        Ok(())
     }
 }

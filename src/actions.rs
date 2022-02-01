@@ -16,7 +16,7 @@ pub struct Action {
     pub action_type: ActionType,
     pub method: Option<String>,
     pub path: Option<String>,
-    pub port: Option<usize>,
+    pub port: Option<u16>,
     pub command: Option<String>
 }
 

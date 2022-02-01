@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
 
     while let Some(pod) = ew.try_next().await? {
-        pod.handle(&client, &actions).await;
+        pod.handle(&client, &actions).await?;
     }
     Ok(())
 }

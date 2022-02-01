@@ -24,7 +24,7 @@ impl AppPod {
 
         let container_statuses = match &pod_status.container_statuses {
             Some(status) => status,
-            None => return Err(anyhow!("No container statuses found on pod"))
+            None => return Err(anyhow!("No container statuses found on pod. It might be starting up as we speak."))
         };
 
         Ok(AppPod {
