@@ -18,5 +18,5 @@ In other words, I'm attempting to reimplement [Ginuudan](https://github.com/nais
 
 - [x] Be able to `exec` into Containers in Pods (sorted out in [c1a9628](https://github.com/chinatsu/hahaha/commit/c1a9a6285b4df5707b295e29b91fed37b8e5a602))
 - [x] Be able to `portforward` into Pods (sorted out in [4f9c95c](https://github.com/chinatsu/hahaha/commit/4f9c95c546c3565e96d8b8af005bc78c30f6ef30))
-- [x] Report to Prometheus (or Stackdriver?) when killing off sidecars
+- [x] Report to Prometheus (or Stackdriver?) when killing off sidecars (sorted out in [4eea123](https://github.com/chinatsu/hahaha/commit/4eea1238cad837767279f880d82ae3b7a16df022))
 - [x] Post Events to Pods about what's done (sorted out in [28b778d](https://github.com/chinatsu/hahaha/commit/28b778dca6425cc73d1cc72ef803bf6f706ee8a3))
