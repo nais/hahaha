@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
                     })
                     .await?;
                 prometheus::SIDECAR_SHUTDOWNS
-                    .with_label_values(&[&sidecar_name, &pod.name()])
+                    .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
                     .inc()
             } else {
                 recorder
@@ -114,7 +114,7 @@ async fn main() -> anyhow::Result<()> {
                     })
                     .await?;
                 prometheus::FAILED_SIDECAR_SHUTDOWNS
-                    .with_label_values(&[&sidecar_name, &pod.name()])
+                    .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
                     .inc()
             }
         }

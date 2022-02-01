@@ -8,13 +8,13 @@ lazy_static! {
     pub static ref SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
         "sidecar_shutdowns",
         "Number of sidecar shutdowns",
-        &["container", "app"],
+        &["container", "pod", "namespace"],
     )
     .unwrap();
     pub static ref FAILED_SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
         "failed_sidecar_shutdowns",
         "Number of failed sidecar shutdowns",
-        &["container", "app"],
+        &["container", "pod", "namespace"],
     )
     .unwrap();
 }
@@ -47,4 +47,24 @@ where
         Err(e) => error!("error while shutting down: {}", e),
     }
     Ok(())
+}
+
+
+#[tokio::test]
+async fn prometheus_server_shuts_down_gracefully() {
+    use std::sync::Arc;
+    use tokio::sync::Notify;
+    
+    let shutdown = Arc::new(Notify::new());
+    let shutdown_clone = shutdown.clone();
+    let server = tokio::spawn(async move {
+        prometheus_server(8999, shutdown_clone.notified())
+            .await
+            .unwrap();
+    });
+    shutdown.notify_one();
+    let ret = server.await;
+
+    assert!(ret.is_ok())
+
 }
