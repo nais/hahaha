@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use k8s_openapi::api::core::v1::{Pod};
 use kube::{api::Api, Client, ResourceExt};
 use std::collections::BTreeMap;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 #[async_trait]
 pub trait Handleable {

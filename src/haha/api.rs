@@ -58,11 +58,12 @@ impl Destroying for Api<Pod> {
                     let body_str = std::str::from_utf8(&body_bytes)?;
                     error!("HTTP request failed: code {}: {}", parts.status, body_str)
                 } else {
-                    info!("Sent `{} {}` at port {} to {}",
+                    info!("Sent `{} {}` at port {} to {} ({})",
                         action.method.as_ref().unwrap(),
                         action.path.as_ref().unwrap(),
                         port,
-                        pod_name
+                        pod_name,
+                        container_name
                     )
                 }
             }
