@@ -2,8 +2,8 @@ use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams},
-    runtime::{utils::try_flatten_applied, watcher},
-    Client, ResourceExt,
+    runtime::{utils::try_flatten_applied, watcher, events::{Reporter, Recorder, Event, EventType}},
+    Client, ResourceExt, Resource,
 };
 use tracing::{info, warn};
 
@@ -24,6 +24,10 @@ async fn main() -> anyhow::Result<()> {
 
     let pods: Api<Pod> = Api::all(client.clone());
     let lp = ListParams::default().timeout(30).labels("nais.io/ginuudan=enabled");
+    let reporter = Reporter {
+        controller: "hahaha".into(),
+        instance: Some("hahaha-1234".into()), // todo get instance from cluster when deployed
+    };
 
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
 
@@ -44,6 +48,9 @@ async fn main() -> anyhow::Result<()> {
         // we need a namespaced api to `exec` and `portforward` into the target pod.
         let api: Api<Pod> = Api::namespaced(client.clone(), &namespace);
 
+        // set up a recorder for publishing events to the Pod
+        let recorder = Recorder::new(client.clone(), reporter.clone(), pod.object_ref(&()));
+
         info!("{} in namespace {} needs help shutting down some residual containers!", pod.name(), namespace);
 
         for sidecar in running_sidecars {
@@ -60,7 +67,24 @@ async fn main() -> anyhow::Result<()> {
                     continue;
                 }
             };
-            api.shutdown(action, &pod.name(), &sidecar_name).await?;
+            let res = api.shutdown(action, &pod.name(), &sidecar_name).await;
+            if res.is_ok() {
+                recorder.publish(Event {
+                    type_: EventType::Normal,
+                    action: "Killing".into(),
+                    reason: "Killing".into(),
+                    note: Some(format!("Successfully shut down container {}", sidecar_name)),
+                    secondary: None,
+                }).await?;
+            } else {
+                recorder.publish(Event {
+                    type_: EventType::Warning,
+                    action: "Killing".into(),
+                    reason: "Killing".into(),
+                    note: Some(format!("Unsuccessfully shut down container {}", sidecar_name)),
+                    secondary: None,
+                }).await?;
+            }
         }
     }
     Ok(())
