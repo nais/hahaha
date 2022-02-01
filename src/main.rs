@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
@@ -9,11 +12,14 @@ use kube::{
     },
     Client, Resource, ResourceExt,
 };
+use std::sync::Arc;
+use tokio::sync::Notify;
 use tracing::{info, warn};
 
 mod actions;
 mod api;
 mod pod;
+mod prometheus;
 
 use api::Destroyer;
 use pod::Sidecars;
@@ -34,6 +40,14 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
+
+    let shutdown = Arc::new(Notify::new());
+    let shutdown_clone = shutdown.clone();
+    let prom = tokio::spawn(async move {
+        prometheus::prometheus_server(8999, shutdown_clone.notified())
+            .await
+            .unwrap();
+    });
 
     while let Some(pod) = ew.try_next().await? {
         let running_sidecars = pod.sidecars().unwrap_or_else(|err| {
@@ -86,6 +100,9 @@ async fn main() -> anyhow::Result<()> {
                         secondary: None,
                     })
                     .await?;
+                prometheus::SIDECAR_SHUTDOWNS
+                    .with_label_values(&[&sidecar_name, &pod.name()])
+                    .inc()
             } else {
                 recorder
                     .publish(Event {
@@ -96,8 +113,13 @@ async fn main() -> anyhow::Result<()> {
                         secondary: None,
                     })
                     .await?;
+                prometheus::FAILED_SIDECAR_SHUTDOWNS
+                    .with_label_values(&[&sidecar_name, &pod.name()])
+                    .inc()
             }
         }
     }
+    shutdown.notify_one();
+    prom.await?;
     Ok(())
 }
