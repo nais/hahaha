@@ -9,7 +9,7 @@ use tracing::{error, info};
 #[async_trait]
 pub trait Destroyer {
     /// Shuts down a container in a given pod with a given Action
-    /// 
+    ///
     /// This is the primary public facing business function for this application
     async fn shutdown(&self, action: &Action, pod_name: &str, container_name: &str) -> anyhow::Result<()>;
 }

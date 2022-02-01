@@ -37,7 +37,7 @@ pub struct Action {
 }
 
 /// Helper trait for inserting different `Action`s with different `ActionType`s into a `BTreeMap`
-/// 
+///
 /// Using this trait will allow us to catch simple misconfigurations in Actions during compile time.
 trait ActionInsertions {
     /// Inserts an action with `ActionType::Exec` into a `BTreeMap`

@@ -8,7 +8,7 @@ pub trait Sidecars {
 }
 
 /// Extension trait for `Pod`
-/// 
+///
 /// Only used in the Sidecars trait
 trait SidecarStates {
     /// Get all `ContainerStatus`es which are not terminated in a Pod
