@@ -119,6 +119,8 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     }
+
+    // we're likely not ever reaching down here, but let's be nice about it if we do
     shutdown.notify_one();
     prom.await?;
     Ok(())

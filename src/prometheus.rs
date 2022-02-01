@@ -19,6 +19,7 @@ lazy_static! {
     .unwrap();
 }
 
+/// The function which triggers on any request to the server (incl. any path)
 async fn metric_service(_req: Request<Body>) -> hyper::Result<Response<Body>> {
     let encoder = TextEncoder::new();
     let mut buffer = vec![];
@@ -30,6 +31,9 @@ async fn metric_service(_req: Request<Body>) -> hyper::Result<Response<Body>> {
         .unwrap())
 }
 
+/// The function which spawns the prometheus server
+///
+/// F is generally a Notify awaiting a notification
 pub async fn prometheus_server<F>(port: u16, shutdown: F) -> hyper::Result<()>
 where
     F: Future<Output = ()>,
@@ -49,22 +53,32 @@ where
     Ok(())
 }
 
-
 #[tokio::test]
 async fn prometheus_server_shuts_down_gracefully() {
     use std::sync::Arc;
     use tokio::sync::Notify;
+    use hyper::{Client, body::HttpBody};
     
+    let port = 1337;
     let shutdown = Arc::new(Notify::new());
     let shutdown_clone = shutdown.clone();
     let server = tokio::spawn(async move {
-        prometheus_server(8999, shutdown_clone.notified())
-            .await
-            .unwrap();
+        prometheus_server(port, shutdown_clone.notified()).await.unwrap();
     });
+
+    // do some prometheus stuff while we're at it
+    SIDECAR_SHUTDOWNS.with_label_values(&["abc", "def", "ghi"]).inc();
+    SIDECAR_SHUTDOWNS.with_label_values(&["abc", "def", "ghi"]).inc();
+
+    let client = Client::new();
+    let mut res = client.get(format!("http://localhost:{}/", port).parse().unwrap()).await.unwrap();
+    let mut buffer = String::new();
+    while let Some(chunk) = res.body_mut().data().await {
+        buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
+    }
+    assert!(buffer.contains("sidecar_shutdowns{container=\"abc\",namespace=\"ghi\",pod=\"def\"} 2"));
+
     shutdown.notify_one();
     let ret = server.await;
-
     assert!(ret.is_ok())
-
 }
