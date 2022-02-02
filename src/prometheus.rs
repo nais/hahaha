@@ -39,7 +39,7 @@ where
     F: Future<Output = ()>,
 {
     let addr = ([127, 0, 0, 1], port).into();
-    info!("serving prometheus on http://{}", addr);
+    info!("serving prometheus on http://{addr}");
 
     let service = make_service_fn(move |_| async { Ok::<_, hyper::Error>(service_fn(metric_service)) });
     let err = Server::bind(&addr)
@@ -48,17 +48,17 @@ where
         .await;
     match &err {
         Ok(()) => info!("stopped prometheus server successfully"),
-        Err(e) => error!("error while shutting down: {}", e),
+        Err(e) => error!("error while shutting down: {e}"),
     }
     Ok(())
 }
 
 #[tokio::test]
 async fn prometheus_server_shuts_down_gracefully() {
+    use hyper::{body::HttpBody, Client};
     use std::sync::Arc;
     use tokio::sync::Notify;
-    use hyper::{Client, body::HttpBody};
-    
+
     let port = 1337;
     let shutdown = Arc::new(Notify::new());
     let shutdown_clone = shutdown.clone();
@@ -71,7 +71,10 @@ async fn prometheus_server_shuts_down_gracefully() {
     SIDECAR_SHUTDOWNS.with_label_values(&["abc", "def", "ghi"]).inc();
 
     let client = Client::new();
-    let mut res = client.get(format!("http://localhost:{}/", port).parse().unwrap()).await.unwrap();
+    let mut res = client
+        .get(format!("http://localhost:{port}/").parse().unwrap())
+        .await
+        .unwrap();
     let mut buffer = String::new();
     while let Some(chunk) = res.body_mut().data().await {
         buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());

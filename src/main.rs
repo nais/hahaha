@@ -50,8 +50,10 @@ async fn main() -> anyhow::Result<()> {
     });
 
     while let Some(pod) = ew.try_next().await? {
+        let pod_name = pod.name();
+
         let running_sidecars = pod.sidecars().unwrap_or_else(|err| {
-            info!("Getting running sidecars for {}: {}", pod.name(), err);
+            info!("Getting running sidecars for {pod_name}: {err}");
             Vec::new()
         });
         if running_sidecars.is_empty() {
@@ -69,23 +71,14 @@ async fn main() -> anyhow::Result<()> {
         // set up a recorder for publishing events to the Pod
         let recorder = Recorder::new(client.clone(), reporter.clone(), pod.object_ref(&()));
 
-        info!(
-            "{} in namespace {} needs help shutting down some residual containers!",
-            pod.name(),
-            namespace
-        );
+        info!("{pod_name} in namespace {namespace} needs help shutting down some residual containers!");
 
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
             let action = match actions.get(&sidecar_name) {
                 Some(action) => action,
                 None => {
-                    warn!(
-                        "I don't know how to shut down {} (in {} in namespace {})",
-                        sidecar_name,
-                        pod.name(),
-                        namespace
-                    );
+                    warn!("I don't know how to shut down {sidecar_name} (in {pod_name} in namespace {namespace})");
                     continue;
                 }
             };
@@ -96,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
                         type_: EventType::Normal,
                         action: "Killing".into(),
                         reason: "Killing".into(),
-                        note: Some(format!("Successfully shut down container {}", sidecar_name)),
+                        note: Some(format!("Successfully shut down container {sidecar_name}")),
                         secondary: None,
                     })
                     .await?;
@@ -109,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
                         type_: EventType::Warning,
                         action: "Killing".into(),
                         reason: "Killing".into(),
-                        note: Some(format!("Unsuccessfully shut down container {}", sidecar_name)),
+                        note: Some(format!("Unsuccessfully shut down container {sidecar_name}")),
                         secondary: None,
                     })
                     .await?;

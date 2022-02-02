@@ -48,16 +48,11 @@ impl DestroyerActions for Api<Pod> {
             .await
         {
             Ok(_) => info!(
-                "Sent `{}` to {}@{}",
-                action.command.as_ref().unwrap(),
-                container_name,
-                pod_name
+                "Sent `{command}` to {container_name}@{pod_name}",
+                command = action.command.as_ref().unwrap()
             ),
             Err(err) => {
-                error!(
-                    "Something bad happened while trying to exec into {}@{}: {}",
-                    container_name, pod_name, err
-                );
+                error!("Something bad happened while trying to exec into {container_name}@{pod_name}: {err}");
             }
         };
         Ok(())
@@ -71,31 +66,27 @@ impl DestroyerActions for Api<Pod> {
         let (mut sender, connection) = hyper::client::conn::handshake(stream).await?;
         tokio::spawn(async move {
             if let Err(e) = connection.await {
-                error!("Error in connection: {}", e);
+                error!("Error in connection: {e}");
             }
         });
+        let method = action.method.as_ref().unwrap().as_str();
+        let path = action.method.as_ref().unwrap().as_str();
         let req = Request::builder()
-            .uri(action.path.as_ref().unwrap())
+            .uri(path)
             .header("Connection", "close")
             .header("Host", "127.0.0.1")
-            .method(action.method.as_ref().unwrap().as_str())
+            .method(method)
             .body(Body::from(""))
             .unwrap();
 
         let (parts, body) = sender.send_request(req).await?.into_parts();
-        if parts.status != 200 {
+        let status_code = parts.status;
+        if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
             let body_str = std::str::from_utf8(&body_bytes)?;
-            error!("HTTP request failed: code {}: {}", parts.status, body_str)
+            error!("HTTP request failed: code {status_code}: {body_str}")
         } else {
-            info!(
-                "Sent `{} {}` at port {} to {} ({})",
-                action.method.as_ref().unwrap(),
-                action.path.as_ref().unwrap(),
-                port,
-                pod_name,
-                container_name
-            )
+            info!("Sent `{method} {path}` at port {port} to {pod_name} ({container_name})",)
         }
         Ok(())
     }
