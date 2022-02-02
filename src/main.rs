@@ -14,7 +14,7 @@ use kube::{
 };
 use std::sync::Arc;
 use tokio::sync::Notify;
-use tracing::{info, warn};
+use tracing::{info, warn, error};
 
 mod actions;
 mod api;
@@ -83,20 +83,8 @@ async fn main() -> anyhow::Result<()> {
                 }
             };
             let res = api.shutdown(action, &pod.name(), &sidecar_name).await;
-            if res.is_ok() {
-                recorder
-                    .publish(Event {
-                        type_: EventType::Normal,
-                        action: "Killing".into(),
-                        reason: "Killing".into(),
-                        note: Some(format!("Successfully shut down container {sidecar_name}")),
-                        secondary: None,
-                    })
-                    .await?;
-                prometheus::SIDECAR_SHUTDOWNS
-                    .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
-                    .inc()
-            } else {
+            if let Err(err) = res {
+                error!("Couldn't shutdown: {err}");
                 recorder
                     .publish(Event {
                         type_: EventType::Warning,
@@ -108,8 +96,21 @@ async fn main() -> anyhow::Result<()> {
                     .await?;
                 prometheus::FAILED_SIDECAR_SHUTDOWNS
                     .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
-                    .inc()
+                    .inc();
+                continue;
             }
+            recorder
+                .publish(Event {
+                    type_: EventType::Normal,
+                    action: "Killing".into(),
+                    reason: "Killing".into(),
+                    note: Some(format!("Successfully shut down container {sidecar_name}")),
+                    secondary: None,
+                })
+                .await?;
+            prometheus::SIDECAR_SHUTDOWNS
+                .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
+                .inc()
         }
     }
 

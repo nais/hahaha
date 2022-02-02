@@ -1,4 +1,5 @@
 use crate::actions::{Action, ActionType};
+use anyhow::anyhow;
 use async_trait::async_trait;
 use hyper::{body, Body, Request};
 use k8s_openapi::api::core::v1::Pod;
@@ -51,9 +52,7 @@ impl DestroyerActions for Api<Pod> {
                 "Sent `{command}` to {container_name}@{pod_name}",
                 command = action.command.as_ref().unwrap()
             ),
-            Err(err) => {
-                error!("Something bad happened while trying to exec into {container_name}@{pod_name}: {err}");
-            }
+            Err(err) => return Err(anyhow!(format!("Exec failed in {container_name}@{pod_name}: {err}"))),
         };
         Ok(())
     }
@@ -70,7 +69,7 @@ impl DestroyerActions for Api<Pod> {
             }
         });
         let method = action.method.as_ref().unwrap().as_str();
-        let path = action.method.as_ref().unwrap().as_str();
+        let path = action.path.as_ref().unwrap().as_str();
         let req = Request::builder()
             .uri(path)
             .header("Connection", "close")
@@ -84,7 +83,7 @@ impl DestroyerActions for Api<Pod> {
         if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
             let body_str = std::str::from_utf8(&body_bytes)?;
-            error!("HTTP request failed: code {status_code}: {body_str}")
+            return Err(anyhow!(format!("HTTP request ({method} {path} at port {port}) failed: code {status_code}: {body_str}")));
         } else {
             info!("Sent `{method} {path}` at port {port} to {pod_name} ({container_name})",)
         }
