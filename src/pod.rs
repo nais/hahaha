@@ -5,6 +5,7 @@ use k8s_openapi::api::core::v1::{ContainerStatus, Pod};
 pub trait Sidecars {
     /// Get all `ContainerStatus`es except the main application container for a `Pod`
     fn sidecars(&self) -> anyhow::Result<Vec<ContainerStatus>>;
+    fn app_name(&self) -> anyhow::Result<String>;
 }
 
 /// Extension trait for `Pod`
@@ -36,11 +37,15 @@ impl Sidecars for Pod {
         }
         Ok(sidecars)
     }
+
+    fn app_name(&self) -> anyhow::Result<String> {
+        Ok(App::from(self)?.name)
+    }
 }
 
 impl SidecarStates for Pod {
     fn running_sidecars(&self) -> Result<Vec<ContainerStatus>> {
-        let app = AppPod::from(self)?;
+        let app = App::from(self)?;
         Ok(app
             .statuses
             .iter()
@@ -50,7 +55,7 @@ impl SidecarStates for Pod {
     }
 
     fn main_container(&self) -> Result<ContainerStatus> {
-        let app = AppPod::from(self)?;
+        let app = App::from(self)?;
         match app.statuses.iter().find(|c| c.name == app.name) {
             Some(c) => Ok(c.clone()),
             None => Err(anyhow!("Couldn't determine main container")),
@@ -58,13 +63,13 @@ impl SidecarStates for Pod {
     }
 }
 
-struct AppPod {
+struct App {
     pub name: String,
     pub statuses: Vec<ContainerStatus>,
 }
 
-impl AppPod {
-    pub fn from(pod: &Pod) -> Result<AppPod> {
+impl App {
+    pub fn from(pod: &Pod) -> Result<App> {
         let labels = match &pod.metadata.labels {
             Some(l) => l,
             None => return Err(anyhow!("No labels found on pod")),
@@ -83,7 +88,7 @@ impl AppPod {
             None => Vec::new(), // if no container statuses are found, return an empty Vec. we're probably starting up
         };
 
-        Ok(AppPod {
+        Ok(App {
             name: app_name.into(),
             statuses: container_statuses,
         })

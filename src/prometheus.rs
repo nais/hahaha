@@ -1,22 +1,24 @@
 use futures::Future;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{server::Server, Body, Request, Response};
-use prometheus::{register_int_counter_vec, Encoder, IntCounterVec, TextEncoder};
+use prometheus::{register_int_counter, register_int_counter_vec, Encoder, IntCounter, IntCounterVec, TextEncoder};
 use tracing::{error, info};
 
 lazy_static! {
     pub static ref SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
         "sidecar_shutdowns",
         "Number of sidecar shutdowns",
-        &["container", "pod", "namespace"],
+        &["container", "job_name", "namespace"],
     )
     .unwrap();
     pub static ref FAILED_SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
         "failed_sidecar_shutdowns",
         "Number of failed sidecar shutdowns",
-        &["container", "pod", "namespace"],
+        &["container", "job_name", "namespace"],
     )
     .unwrap();
+    pub static ref TOTAL_SIDECARS_SHUTDOWN: IntCounter =
+        register_int_counter!("total_sidecar_shutdowns", "Total number of sidecars shut down",).unwrap();
 }
 
 /// The function which triggers on any request to the server (incl. any path)
@@ -79,7 +81,7 @@ async fn prometheus_server_shuts_down_gracefully() {
     while let Some(chunk) = res.body_mut().data().await {
         buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
     }
-    assert!(buffer.contains("sidecar_shutdowns{container=\"abc\",namespace=\"ghi\",pod=\"def\"} 2"));
+    assert!(buffer.contains("sidecar_shutdowns{container=\"abc\",job_name=\"def\",namespace=\"ghi\"} 2"));
 
     shutdown.notify_one();
     let ret = server.await;

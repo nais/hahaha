@@ -83,7 +83,9 @@ impl DestroyerActions for Api<Pod> {
         if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
             let body_str = std::str::from_utf8(&body_bytes)?;
-            return Err(anyhow!(format!("HTTP request ({method} {path} at port {port}) failed: code {status_code}: {body_str}")));
+            return Err(anyhow!(format!(
+                "HTTP request ({method} {path} at port {port}) failed: code {status_code}: {body_str}"
+            )));
         } else {
             info!("Sent `{method} {path}` at port {port} to {pod_name} ({container_name})",)
         }

@@ -14,12 +14,13 @@ use kube::{
 };
 use std::sync::Arc;
 use tokio::sync::Notify;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 mod actions;
 mod api;
 mod pod;
 mod prometheus;
+use crate::prometheus::*;
 
 use api::Destroyer;
 use pod::Sidecars;
@@ -36,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     let lp = ListParams::default().timeout(30).labels("nais.io/ginuudan=enabled");
     let reporter = Reporter {
         controller: "hahaha".into(),
-        instance: Some("hahaha-1234".into()), // todo get instance from cluster when deployed
+        instance: Some("hahaha-1234".into()), // TODO get instance from cluster when deployed
     };
 
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
@@ -44,9 +45,7 @@ async fn main() -> anyhow::Result<()> {
     let shutdown = Arc::new(Notify::new());
     let shutdown_clone = shutdown.clone();
     let prom = tokio::spawn(async move {
-        prometheus::prometheus_server(8999, shutdown_clone.notified())
-            .await
-            .unwrap();
+        prometheus_server(8999, shutdown_clone.notified()).await.unwrap();
     });
 
     while let Some(pod) = ew.try_next().await? {
@@ -73,6 +72,8 @@ async fn main() -> anyhow::Result<()> {
 
         info!("{pod_name} in namespace {namespace} needs help shutting down some residual containers!");
 
+        let app_name = pod.app_name()?;
+
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
             let action = match actions.get(&sidecar_name) {
@@ -94,8 +95,8 @@ async fn main() -> anyhow::Result<()> {
                         secondary: None,
                     })
                     .await?;
-                prometheus::FAILED_SIDECAR_SHUTDOWNS
-                    .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
+                FAILED_SIDECAR_SHUTDOWNS
+                    .with_label_values(&[&sidecar_name, &app_name, &namespace])
                     .inc();
                 continue;
             }
@@ -108,9 +109,10 @@ async fn main() -> anyhow::Result<()> {
                     secondary: None,
                 })
                 .await?;
-            prometheus::SIDECAR_SHUTDOWNS
-                .with_label_values(&[&sidecar_name, &pod.name(), &namespace])
-                .inc()
+            SIDECAR_SHUTDOWNS
+                .with_label_values(&[&sidecar_name, &app_name, &namespace])
+                .inc();
+            TOTAL_SIDECARS_SHUTDOWN.inc();
         }
     }
 
