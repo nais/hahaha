@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
                 continue;
             }
             recorder
-                .info(format!("Successfully shut down container {sidecar_name}"))
+                .info(format!("Shut down container {sidecar_name}"))
                 .await?;
             SIDECAR_SHUTDOWNS
                 .with_label_values(&[&sidecar_name, &job_name, &namespace])
