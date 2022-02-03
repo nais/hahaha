@@ -1,13 +1,15 @@
 use chrono::Utc;
 use k8s_openapi::{
-    api::{core::v1::ObjectReference, events::v1::Event},
-    apimachinery::pkg::apis::meta::v1::{MicroTime, Time},
+    api::{core::v1::ObjectReference, core::v1::Event},
+    apimachinery::pkg::apis::meta::v1::Time,
 };
 use kube::{api::PostParams, core::ObjectMeta, runtime::events::Reporter, Api, Client};
 
 /// A slightly modified version of kube::runtime::events::Recorder
 ///
-/// Published events also have deprecated_first_timestamp and deprecated_last_timestamp set
+/// The Recorder uses k8s_openapi::api::core::v1::Event instead of k8s_openapi::api::events::v1::Event.
+/// This is to better align with ~v1.19 API versions, whereas later Kubernetes versions prefer the other struct.
+/// TODO Once we upgrade to a cluster version which prefers events::v1::Event, we use kube-rs' Recorder instead
 pub struct Recorder {
     events: Api<Event>,
     reporter: Reporter,
@@ -51,19 +53,19 @@ impl Recorder {
         Event {
             action: Some("Killing".into()),
             reason: Some("Killing".into()),
-            deprecated_count: None,
-            deprecated_first_timestamp: Some(Time(now.clone())),
-            deprecated_last_timestamp: Some(Time(now.clone())),
-            deprecated_source: None,
-            event_time: MicroTime(now.clone()),
-            regarding: Some(self.reference.clone()),
-            note: Some(message),
+            count: None,
+            first_timestamp: Some(Time(now.clone())),
+            last_timestamp: Some(Time(now.clone())),
+            source: None,
+            event_time: None,
+            involved_object: self.reference.clone(),
+            message: Some(message),
             metadata: ObjectMeta {
                 namespace: self.reference.namespace.clone(),
                 generate_name: Some(format!("{}-", self.reporter.controller)),
                 ..Default::default()
             },
-            reporting_controller: Some(self.reporter.controller.clone()),
+            reporting_component: Some(self.reporter.controller.clone()),
             reporting_instance: Some(
                 self.reporter
                     .instance
@@ -100,9 +102,8 @@ async fn event_timestamps_are_set() -> anyhow::Result<()> {
     );
 
     let event = recorder.event("Normal".into(), "blah blah".into());
-    let first_timestamp = event.deprecated_first_timestamp;
-    let last_timestamp = event.deprecated_last_timestamp;
-    let event_time = event.event_time;
+    let first_timestamp = event.first_timestamp;
+    let last_timestamp = event.last_timestamp;
 
     assert!(first_timestamp.is_some());
     assert!(last_timestamp.is_some());
@@ -111,11 +112,9 @@ async fn event_timestamps_are_set() -> anyhow::Result<()> {
 
     let f_ts = &serde_json::to_string(&first_timestamp.unwrap())?[1..20];
     let l_ts = &serde_json::to_string(&last_timestamp.unwrap())?[1..20];
-    let e_t = &serde_json::to_string(&event_time)?[1..20];
 
-    assert!(chrono::NaiveDateTime::parse_from_str(e_t, "%Y-%m-%dT%H:%M:%S").is_ok());
+    assert!(chrono::NaiveDateTime::parse_from_str(f_ts, "%Y-%m-%dT%H:%M:%S").is_ok());
     assert_eq!(f_ts, l_ts);
-    assert_eq!(e_t, l_ts);
 
     Ok(())
 }

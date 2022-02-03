@@ -576,9 +576,12 @@ dependencies = [
  "base64",
  "bytes",
  "chrono",
+ "http",
+ "percent-encoding",
  "serde",
  "serde-value",
  "serde_json",
+ "url",
 ]
 
 [[package]]
