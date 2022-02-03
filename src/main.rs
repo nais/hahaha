@@ -5,11 +5,7 @@ use futures::{StreamExt, TryStreamExt};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams},
-    runtime::{
-        events::{Event, EventType, Recorder, Reporter},
-        utils::try_flatten_applied,
-        watcher,
-    },
+    runtime::{events::Reporter, utils::try_flatten_applied, watcher},
     Client, Resource, ResourceExt,
 };
 use std::sync::Arc;
@@ -18,12 +14,16 @@ use tracing::{error, info, warn};
 
 mod actions;
 mod api;
+mod events;
 mod pod;
 mod prometheus;
-use crate::prometheus::*;
 
-use api::Destroyer;
-use pod::Sidecars;
+use crate::{
+    events::Recorder,
+    prometheus::*,
+    api::Destroyer,
+    pod::Sidecars,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -93,13 +93,7 @@ async fn main() -> anyhow::Result<()> {
             if let Err(err) = res {
                 error!("Couldn't shutdown: {err}");
                 recorder
-                    .publish(Event {
-                        type_: EventType::Warning,
-                        action: "Killing".into(),
-                        reason: "Killing".into(),
-                        note: Some(format!("Unsuccessfully shut down container {sidecar_name}")),
-                        secondary: None,
-                    })
+                    .warn(format!("Unsuccessfully shut down container {sidecar_name}"))
                     .await?;
                 FAILED_SIDECAR_SHUTDOWNS
                     .with_label_values(&[&sidecar_name, &job_name, &namespace])
@@ -107,13 +101,7 @@ async fn main() -> anyhow::Result<()> {
                 continue;
             }
             recorder
-                .publish(Event {
-                    type_: EventType::Normal,
-                    action: "Killing".into(),
-                    reason: "Killing".into(),
-                    note: Some(format!("Successfully shut down container {sidecar_name}")),
-                    secondary: None,
-                })
+                .info(format!("Successfully shut down container {sidecar_name}"))
                 .await?;
             SIDECAR_SHUTDOWNS
                 .with_label_values(&[&sidecar_name, &job_name, &namespace])
