@@ -6,7 +6,7 @@ use k8s_openapi::{
 use kube::{api::PostParams, core::ObjectMeta, runtime::events::Reporter, Api, Client};
 
 /// A slightly modified version of kube::runtime::events::Recorder
-/// 
+///
 /// Published events also have deprecated_first_timestamp and deprecated_last_timestamp set
 pub struct Recorder {
     events: Api<Event>,
@@ -31,13 +31,17 @@ impl Recorder {
 
     /// Publish a Killing event with the type Normal
     pub async fn info(&self, message: String) -> Result<(), kube::Error> {
-        self.events.create(&PostParams::default(), &self.event("Normal".into(), message)).await?;
+        self.events
+            .create(&PostParams::default(), &self.event("Normal".into(), message))
+            .await?;
         Ok(())
     }
 
     /// Publish Killing event with the type Warning
     pub async fn warn(&self, message: String) -> Result<(), kube::Error> {
-        self.events.create(&PostParams::default(), &self.event("Warning".into(), message)).await?;
+        self.events
+            .create(&PostParams::default(), &self.event("Warning".into(), message))
+            .await?;
         Ok(())
     }
 
@@ -71,4 +75,55 @@ impl Recorder {
             related: None,
         }
     }
+}
+
+
+#[tokio::test]
+async fn event_timestamps_are_set() -> anyhow::Result<()> {
+    let client = Client::try_default().await?;
+    let reporter = Reporter {
+        controller: "hahaha".into(),
+        instance: Some("hahaha-1234".into()),
+    };
+    let recorder = Recorder::new(
+        client.clone(),
+        reporter.clone(),
+        ObjectReference {
+            api_version: None,
+            field_path: None,
+            kind: None,
+            name: None,
+            namespace: None,
+            resource_version: None,
+            uid: None,
+        },
+    );
+
+    let event = recorder.event("Normal".into(), "blah blah".into());
+    let first_timestamp = event.deprecated_first_timestamp;
+    let last_timestamp = event.deprecated_last_timestamp;
+    let event_time = event.event_time;
+
+    assert!(first_timestamp.is_some());
+    assert!(last_timestamp.is_some());
+
+    assert_eq!(first_timestamp, last_timestamp);
+
+    let mut f_ts = serde_json::to_string(&first_timestamp.unwrap())?;
+    let mut l_ts = serde_json::to_string(&last_timestamp.unwrap())?;
+    let mut e_t = serde_json::to_string(&event_time)?;
+    
+    let _ = f_ts.drain(20..);
+    let _ = l_ts.drain(20..);
+    let _ = e_t.drain(20..);
+    let _ = f_ts.drain(..1);
+    let _ = l_ts.drain(..1);
+    let _ = e_t.drain(..1);
+    // these should all look like YYYY-mm-ddTHH:MM:SS now, and they should all be equal
+    
+    assert!(chrono::NaiveDateTime::parse_from_str(&e_t, "%Y-%m-%dT%H:%M:%S").is_ok());
+    assert_eq!(f_ts, l_ts);
+    assert_eq!(e_t, l_ts);
+
+    Ok(())
 }

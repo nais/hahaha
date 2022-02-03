@@ -393,6 +393,8 @@ dependencies = [
  "kube",
  "lazy_static",
  "prometheus",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

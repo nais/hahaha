@@ -11,6 +11,8 @@ kube = { version = "0.68", features = ["runtime","derive","ws"] }
 k8s-openapi = { version = "0.14.0", default-features = false, features = ["v1_19"] }
 futures = "0.3.17"
 chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # simpler error handling
 anyhow = "1.0.44"
