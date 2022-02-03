@@ -109,19 +109,11 @@ async fn event_timestamps_are_set() -> anyhow::Result<()> {
 
     assert_eq!(first_timestamp, last_timestamp);
 
-    let mut f_ts = serde_json::to_string(&first_timestamp.unwrap())?;
-    let mut l_ts = serde_json::to_string(&last_timestamp.unwrap())?;
-    let mut e_t = serde_json::to_string(&event_time)?;
-    
-    let _ = f_ts.drain(20..);
-    let _ = l_ts.drain(20..);
-    let _ = e_t.drain(20..);
-    let _ = f_ts.drain(..1);
-    let _ = l_ts.drain(..1);
-    let _ = e_t.drain(..1);
-    // these should all look like YYYY-mm-ddTHH:MM:SS now, and they should all be equal
-    
-    assert!(chrono::NaiveDateTime::parse_from_str(&e_t, "%Y-%m-%dT%H:%M:%S").is_ok());
+    let f_ts = &serde_json::to_string(&first_timestamp.unwrap())?[1..20];
+    let l_ts = &serde_json::to_string(&last_timestamp.unwrap())?[1..20];
+    let e_t = &serde_json::to_string(&event_time)?[1..20];
+
+    assert!(chrono::NaiveDateTime::parse_from_str(e_t, "%Y-%m-%dT%H:%M:%S").is_ok());
     assert_eq!(f_ts, l_ts);
     assert_eq!(e_t, l_ts);
 
