@@ -17,7 +17,7 @@ lazy_static! {
         &["container", "job_name", "namespace"],
     )
     .unwrap();
-    pub static ref TOTAL_SIDECARS_SHUTDOWN: IntCounter =
+    pub static ref TOTAL_SIDECAR_SHUTDOWNS: IntCounter =
         register_int_counter!("total_sidecar_shutdowns", "Total number of sidecars shut down",).unwrap();
 }
 
@@ -56,8 +56,7 @@ where
 }
 
 #[tokio::test]
-async fn prometheus_server_shuts_down_gracefully() {
-    use hyper::{body::HttpBody, Client};
+async fn server_shuts_down_gracefully() {
     use std::sync::Arc;
     use tokio::sync::Notify;
 
@@ -68,9 +67,27 @@ async fn prometheus_server_shuts_down_gracefully() {
         prometheus_server(port, shutdown_clone.notified()).await.unwrap();
     });
 
-    // do some prometheus stuff while we're at it
-    SIDECAR_SHUTDOWNS.with_label_values(&["abc", "def", "ghi"]).inc();
-    SIDECAR_SHUTDOWNS.with_label_values(&["abc", "def", "ghi"]).inc();
+    shutdown.notify_one();
+    let ret = server.await;
+    assert!(ret.is_ok())
+}
+
+#[tokio::test]
+async fn server_registers_counters() {
+    use hyper::{body::HttpBody, Client};
+    use std::sync::Arc;
+    use tokio::sync::Notify;
+
+    let port = 1337;
+    let shutdown = Arc::new(Notify::new());
+    let shutdown_clone = shutdown.clone();
+
+    tokio::spawn(async move {
+        prometheus_server(port, shutdown_clone.notified()).await.unwrap();
+    });
+
+    TOTAL_SIDECAR_SHUTDOWNS.inc();
+    TOTAL_SIDECAR_SHUTDOWNS.inc();
 
     let client = Client::new();
     let mut res = client
@@ -81,9 +98,6 @@ async fn prometheus_server_shuts_down_gracefully() {
     while let Some(chunk) = res.body_mut().data().await {
         buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
     }
-    assert!(buffer.contains("sidecar_shutdowns{container=\"abc\",job_name=\"def\",namespace=\"ghi\"} 2"));
 
-    shutdown.notify_one();
-    let ret = server.await;
-    assert!(ret.is_ok())
+    assert!(buffer.contains("total_sidecar_shutdowns 2"));
 }

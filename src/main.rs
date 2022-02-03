@@ -72,7 +72,13 @@ async fn main() -> anyhow::Result<()> {
 
         info!("{pod_name} in namespace {namespace} needs help shutting down some residual containers!");
 
-        let app_name = pod.app_name()?;
+        let job_name = match pod.job_name() {
+            Ok(name) => name,
+            Err(e) => {
+                warn!("Getting job name from pod: {e}");
+                continue;
+            }
+        };
 
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
@@ -83,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
                     continue;
                 }
             };
-            let res = api.shutdown(action, &pod.name(), &sidecar_name).await;
+            let res = api.shutdown(action, &pod_name, &sidecar_name).await;
             if let Err(err) = res {
                 error!("Couldn't shutdown: {err}");
                 recorder
@@ -96,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
                     })
                     .await?;
                 FAILED_SIDECAR_SHUTDOWNS
-                    .with_label_values(&[&sidecar_name, &app_name, &namespace])
+                    .with_label_values(&[&sidecar_name, &job_name, &namespace])
                     .inc();
                 continue;
             }
@@ -110,9 +116,9 @@ async fn main() -> anyhow::Result<()> {
                 })
                 .await?;
             SIDECAR_SHUTDOWNS
-                .with_label_values(&[&sidecar_name, &app_name, &namespace])
+                .with_label_values(&[&sidecar_name, &job_name, &namespace])
                 .inc();
-            TOTAL_SIDECARS_SHUTDOWN.inc();
+            TOTAL_SIDECAR_SHUTDOWNS.inc();
         }
     }
 
