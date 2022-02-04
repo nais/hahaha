@@ -1,6 +1,6 @@
 use chrono::Utc;
 use k8s_openapi::{
-    api::{core::v1::ObjectReference, core::v1::Event},
+    api::{core::v1::Event, core::v1::ObjectReference},
     apimachinery::pkg::apis::meta::v1::Time,
 };
 use kube::{api::PostParams, core::ObjectMeta, runtime::events::Reporter, Api, Client};

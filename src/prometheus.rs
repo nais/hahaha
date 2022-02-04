@@ -18,7 +18,12 @@ lazy_static! {
     )
     .unwrap();
     pub static ref TOTAL_SIDECAR_SHUTDOWNS: IntCounter =
-        register_int_counter!("total_sidecar_shutdowns", "Total number of sidecars shut down",).unwrap();
+        register_int_counter!("total_sidecar_shutdowns", "Total number of sidecars shut down").unwrap();
+    pub static ref TOTAL_UNSUCCESSFUL_EVENT_POSTS: IntCounter = register_int_counter!(
+        "total_unsuccessful_event_posts",
+        "Total number of unsuccessful Kubernetes Event posts"
+    )
+    .unwrap();
 }
 
 /// The function which triggers on any request to the server (incl. any path)

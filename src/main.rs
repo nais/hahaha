@@ -18,12 +18,7 @@ mod events;
 mod pod;
 mod prometheus;
 
-use crate::{
-    events::Recorder,
-    prometheus::*,
-    api::Destroyer,
-    pod::Sidecars,
-};
+use crate::{api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -92,17 +87,22 @@ async fn main() -> anyhow::Result<()> {
             let res = api.shutdown(action, &pod_name, &sidecar_name).await;
             if let Err(err) = res {
                 error!("Couldn't shutdown: {err}");
-                recorder
-                    .warn(format!("Unsuccessfully shut down container {sidecar_name}"))
-                    .await?;
+                if let Err(e) = recorder
+                    .warn(format!("Unsuccessfully shut down container {sidecar_name}: {err}"))
+                    .await
+                {
+                    error!("Couldn't publish Kubernetes Event: {e}");
+                    TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
+                }
                 FAILED_SIDECAR_SHUTDOWNS
                     .with_label_values(&[&sidecar_name, &job_name, &namespace])
                     .inc();
                 continue;
             }
-            recorder
-                .info(format!("Shut down container {sidecar_name}"))
-                .await?;
+            if let Err(e) = recorder.info(format!("Shut down container {sidecar_name}")).await {
+                error!("Couldn't publish Kubernetes Event: {e}");
+                continue;
+            }
             SIDECAR_SHUTDOWNS
                 .with_label_values(&[&sidecar_name, &job_name, &namespace])
                 .inc();
