@@ -17,8 +17,6 @@ lazy_static! {
         &["container", "job_name", "namespace"],
     )
     .unwrap();
-    pub static ref TOTAL_SIDECAR_SHUTDOWNS: IntCounter =
-        register_int_counter!("total_sidecar_shutdowns", "Total number of sidecars shut down").unwrap();
     pub static ref TOTAL_UNSUCCESSFUL_EVENT_POSTS: IntCounter = register_int_counter!(
         "total_unsuccessful_event_posts",
         "Total number of unsuccessful Kubernetes Event posts"
@@ -91,8 +89,8 @@ async fn server_registers_counters() {
         prometheus_server(port, shutdown_clone.notified()).await.unwrap();
     });
 
-    TOTAL_SIDECAR_SHUTDOWNS.inc();
-    TOTAL_SIDECAR_SHUTDOWNS.inc();
+    TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
+    TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
 
     let client = Client::new();
     let mut res = client
@@ -104,5 +102,5 @@ async fn server_registers_counters() {
         buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
     }
 
-    assert!(buffer.contains("total_sidecar_shutdowns 2"));
+    assert!(buffer.contains("total_unsuccessful_event_posts 2"));
 }

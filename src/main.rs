@@ -106,7 +106,6 @@ async fn main() -> anyhow::Result<()> {
             SIDECAR_SHUTDOWNS
                 .with_label_values(&[&sidecar_name, &job_name, &namespace])
                 .inc();
-            TOTAL_SIDECAR_SHUTDOWNS.inc();
         }
     }
 
