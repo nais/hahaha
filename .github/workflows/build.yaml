@@ -54,4 +54,4 @@ jobs:
           TIME=$(date +'%Y-%m-%d')
           cp target/release/hahaha .
           docker build -t ${IMAGE}:${TIME}-${GITHUB_SHA::8} .
-          docker push ${IMAGE}
+          docker push ${IMAGE}:${TIME}-${GITHUB_SHA::8}
