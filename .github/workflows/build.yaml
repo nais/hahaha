@@ -48,11 +48,11 @@ jobs:
           args: --release --target x86_64-unknown-linux-musl
       - name: Build and publish Docker image
         env:
-          NAME: ${{ NAME }}
+          NAME: ${NAME}
           GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
         run: |
           TIME=$(date +'%Y-%m-%d')
-          cp target/x86_64-unknown-linux-musl/release/${{ NAME }} .
+          cp target/x86_64-unknown-linux-musl/release/${NAME} .
           docker build -t ${IMAGE}:${TIME}-${GITHUB_SHA::8} .
           docker login ghcr.io -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
           docker push ${IMAGE}
