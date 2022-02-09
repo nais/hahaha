@@ -22,7 +22,6 @@ use crate::{api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    std::env::set_var("RUST_LOG", "info,kube=warn");
     tracing_subscriber::fmt::init();
 
     let actions = actions::generate();
