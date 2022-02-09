@@ -2,21 +2,37 @@
 
 Your leader has been eliminated, it's time for the rest of you to die!
 
-Pods spawned by Jobs that also contain sidecars might never run to completion.
+Pods spawned by Naisjobs that also contain sidecars might never run to completion.
 That is, unless a particular villain shows up when the main container has died and terminates the others.
 
-In other words, I'm attempting to reimplement [Ginuudan](https://github.com/nais/ginuudan) with kube-rs, primarily for fun and exploring how Kubernetes operators can be written with Rust.
+## What?
 
-## Differences between HAHAHA and Ginuudan
+This is a project to reimplement [Ginuudan](https://github.com/nais/ginuudan).
 
-1. Ginuudan looks for pods with a specific annotation, HAHAHA uses a label.
+The primary motivation for this is to attain some level of stability and predictability.
+Ginuudan, through the library that it uses to interface with Kubernetes, attempts to leave state on objects in the cluster.
+This means that Ginuudan often doesn't show up for cleaning duty if things (e.g. expected state) aren't in order in the cluster otherwise.
+
+HAHAHA is a more naive implementation that handles Pods without requiring any state beyond what's presented by a Pod whose main Container has reached a finished state.
+
+
+### Small technical differences between HAHAHA and Ginuudan
+
+1. Ginuudan looks for Pods with a specific annotation, HAHAHA uses a label.
     * Labels should better leverage underlying Kubernetes APIs for watching Pods.
+    * This also helps with deploying HAHAHA later, as it can coexist with Ginuudan; there will be no overlap in target Pods between the two.
 2. HAHAHA defines actions through hardcoding them in `actions.rs/generate()`, as opposed to a yaml file.
     * Using the functions from the ActionInsertions trait to define actions will catch the simpler misconfigurations of actions during compile time.
 
-## Reaching my idea of an ideal reaper operator
 
-- [x] Be able to `exec` into Containers in Pods (sorted out in [c1a9628](https://github.com/chinatsu/hahaha/commit/c1a9a6285b4df5707b295e29b91fed37b8e5a602))
-- [x] Be able to `portforward` into Pods (sorted out in [4f9c95c](https://github.com/chinatsu/hahaha/commit/4f9c95c546c3565e96d8b8af005bc78c30f6ef30))
-- [x] Report to Prometheus (or Stackdriver?) when killing off sidecars (sorted out in [4eea123](https://github.com/chinatsu/hahaha/commit/4eea1238cad837767279f880d82ae3b7a16df022))
-- [x] Post Events to Pods about what's done (sorted out in [28b778d](https://github.com/chinatsu/hahaha/commit/28b778dca6425cc73d1cc72ef803bf6f706ee8a3))
+## What kind of sidecars can appear alongside my Job?
+
+| name | explanation |
+|------|-------------|
+| linkerd-proxy | runs if your Naisjob runs in GCP | 
+| cloudsql-proxy | runs if your Naisjob provisions databases through `spec.gcp.sqlInstances` |
+| secure-logs-fluentd | runs if your Naisjob has `spec.secureLogs.enabled` set to `true` |
+| secure-logs-configmap-reload | runs if your Naisjob has `spec.secureLogs.enabled` set to `true` |
+| vks-sidecar | runs if your Naisjob has `spec.vault.sidecar` set to `true` |
+
+You can view what HAHAHA tries to do to these sidecars when encountered in [actions.rs](https://github.com/nais/hahaha/blob/main/src/actions.rs#L9-L13)
