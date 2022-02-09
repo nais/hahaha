@@ -59,24 +59,7 @@ where
 }
 
 #[tokio::test]
-async fn server_shuts_down_gracefully() {
-    use std::sync::Arc;
-    use tokio::sync::Notify;
-
-    let port = 1337;
-    let shutdown = Arc::new(Notify::new());
-    let shutdown_clone = shutdown.clone();
-    let server = tokio::spawn(async move {
-        prometheus_server(port, shutdown_clone.notified()).await.unwrap();
-    });
-
-    shutdown.notify_one();
-    let ret = server.await;
-    assert!(ret.is_ok())
-}
-
-#[tokio::test]
-async fn server_registers_counters() {
+async fn server_functions_and_shuts_down_gracefully() {
     use hyper::{body::HttpBody, Client};
     use std::sync::Arc;
     use tokio::sync::Notify;
@@ -84,8 +67,7 @@ async fn server_registers_counters() {
     let port = 1337;
     let shutdown = Arc::new(Notify::new());
     let shutdown_clone = shutdown.clone();
-
-    tokio::spawn(async move {
+    let server = tokio::spawn(async move {
         prometheus_server(port, shutdown_clone.notified()).await.unwrap();
     });
 
@@ -103,4 +85,8 @@ async fn server_registers_counters() {
     }
 
     assert!(buffer.contains("total_unsuccessful_event_posts 2"));
+
+    shutdown.notify_one();
+    let ret = server.await;
+    assert!(ret.is_ok())
 }
