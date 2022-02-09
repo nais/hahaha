@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - 'main'
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'Cargo.toml'
+      - '.github/workflows/**'
 env:
   IMAGE: ghcr.io/${{ github.repository }}
   NAME: hahaha
