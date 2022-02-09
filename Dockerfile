@@ -1,7 +1,4 @@
-FROM alpine:3.15
-
-COPY ./hahaha .
-
-EXPOSE 8999
-ENV RUST_LOG=info,kube=warn
-CMD ["./hahaha"]
+FROM gcr.io/distroless/static:nonroot
+COPY --chown=nonroot:nonroot ./hahaha /app/
+EXPOSE 8080
+ENTRYPOINT ["/app/hahaha"]

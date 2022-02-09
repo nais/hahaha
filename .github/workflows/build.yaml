@@ -32,27 +32,24 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-unknown-linux-musl
           override: true
       - name: Test
         uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: test
-          args: --release --target x86_64-unknown-linux-musl
+          args: --release
       - name: Build binary
         uses: actions-rs/cargo@v1
         with:
-          use-cross: true
           command: build
-          args: --release --target x86_64-unknown-linux-musl
+          args: --release
       - name: Build and publish Docker image
         env:
           NAME: ${NAME}
           GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
         run: |
           TIME=$(date +'%Y-%m-%d')
-          cp target/x86_64-unknown-linux-musl/release/${NAME} .
+          cp target/release/${NAME} .
           docker build -t ${IMAGE}:${TIME}-${GITHUB_SHA::8} .
           docker login ghcr.io -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
           docker push ${IMAGE}
