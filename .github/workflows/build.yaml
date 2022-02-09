@@ -8,7 +8,7 @@ env:
   NAME: hahaha
 jobs:
   build:
-    name: Build and push Docker image
+    name: Test, build and push Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -45,11 +45,11 @@ jobs:
           args: --release
       - name: Build and publish Docker image
         env:
-          NAME: ${NAME}
+          NAME: hahaha
           GITHUB_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
         run: |
           TIME=$(date +'%Y-%m-%d')
-          cp target/release/${NAME} .
+          cp target/release/hahaha .
           docker build -t ${IMAGE}:${TIME}-${GITHUB_SHA::8} .
           docker login ghcr.io -u ${GITHUB_REPOSITORY} -p ${GITHUB_TOKEN}
           docker push ${IMAGE}
