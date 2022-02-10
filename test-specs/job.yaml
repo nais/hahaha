@@ -9,7 +9,7 @@ spec:
     metadata:
       labels:
         app: pi
-        nais.io/ginuudan: enabled
+        nais.io/naisjob: true
     spec:
       restartPolicy: OnFailure
       serviceAccount: unleash

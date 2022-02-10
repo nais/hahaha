@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let client = Client::try_default().await?;
 
     let pods: Api<Pod> = Api::all(client.clone());
-    let lp = ListParams::default().timeout(30).labels("nais.io/ginuudan=enabled");
+    let lp = ListParams::default().timeout(30).labels("nais.io/naisjob=true");
     let reporter = Reporter {
         controller: "hahaha".into(),
         instance: Some("hahaha-1234".into()), // TODO get instance from cluster when deployed
