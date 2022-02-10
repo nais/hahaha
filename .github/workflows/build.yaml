@@ -8,17 +8,23 @@ on:
       - 'Dockerfile'
       - 'Cargo.toml'
       - '.github/workflows/**'
+      - '.nais/**'
 env:
   IMAGE: ghcr.io/${{ github.repository }}
 jobs:
   set-version:
     name: Generate version
     runs-on: ubuntu-20.04
-    outputs:
-      version: ${{ steps.generate_version.outputs.version }}
     steps:
       - id: generate_version
-        run: echo "::set-output version=$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
+        run: echo ::set-output version="$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
+    outputs:
+      version: ${{ steps.generate_version.outputs.version }}
+  bogus:
+    runs-on: ubuntu-20.04
+    needs: set-version
+    steps:
+      - run: echo ${{ steps.get-token.outputs.token }}
   build:
     name: Test, build and push Docker image
     runs-on: ubuntu-20.04
