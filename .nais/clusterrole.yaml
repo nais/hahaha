@@ -11,22 +11,13 @@ rules:
     resources:
       - pods
     verbs:
-      - list
       - watch
 
   - apiGroups:
       - ""
     resources:
+      - events
       - pods/exec
       - pods/portforward
-    verbs:
-      - create
-      - get
-      - list
-  
-  - apiGroups:
-      - ""
-    resources:
-      - events
     verbs:
       - create
