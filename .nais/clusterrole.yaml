@@ -18,7 +18,6 @@ rules:
       - pods/exec
       - pods/portforward
     verbs:
-      - create
       - get
 
   - apiGroups:

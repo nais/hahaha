@@ -33,11 +33,9 @@ async fn main() -> anyhow::Result<()> {
     let h = hostname::get()?;
     let host_name = match h.to_str() {
         Some(s) => s,
-        None => "hahaha-1337",
+        None => "hahaha-1337", // consider dying here, this should never happen after all.
     };
 
-
-    info!("My hostname is {}!", host_name);
     let reporter = Reporter {
         controller: "hahaha".into(),
         instance: Some(host_name.into()),
