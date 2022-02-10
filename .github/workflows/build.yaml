@@ -10,11 +10,19 @@ on:
       - '.github/workflows/**'
 env:
   IMAGE: ghcr.io/${{ github.repository }}
-  NAME: hahaha
 jobs:
+  set-version:
+    name: Generate version
+    runs-on: ubuntu-20.04
+    outputs:
+      version: ${{ steps.generate_version.outputs.version }}
+    steps:
+      - id: generate_version
+        run: echo "::set-output version=$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
   build:
     name: Test, build and push Docker image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    needs: set-version
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
@@ -56,7 +64,46 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and publish Docker image
         run: |
-          TIME=$(date +'%Y-%m-%d')
           cp target/release/hahaha .
-          docker build -t ${IMAGE}:${TIME}-${GITHUB_SHA::8} .
-          docker push ${IMAGE}:${TIME}-${GITHUB_SHA::8}
+          docker build -t ${IMAGE}:${{ needs.set-version.outputs.version }} .
+          docker push ${IMAGE}:${{ needs.set-version.outputs.version }}
+  nais-yaml:
+    name: Push to nais-yaml
+    runs-on: ubuntu-latest
+    needs: [set-version, build]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout hahaha
+        uses: actions/checkout@v2
+        with:
+          path: hahaha
+      - uses: navikt/github-app-token-generator@v1
+        id: get-token
+        with:
+          private-key: ${{ secrets.NAIS_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.NAIS_APP_ID }}
+          repo: navikt/nais-yaml
+      - uses: actions/checkout@v2
+        with:
+          repository: navikt/nais-yaml
+          token: ${{ steps.get-token.outputs.token }}
+          path: nais-yaml
+      - run: |
+          cd hahaha
+          res=".nais"
+          static_file="../nais-yaml/templates/hahaha.yaml"
+          cat $res/hahaha.yaml $res/clusterrole.yaml $res/clusterrolebinding.yaml $res/networkpolicy.yaml > $static_file
+          
+          echo "just checking that we get here"
+          cat $static_file
+
+      # - run: |
+      #     cd nais-yaml
+      #     git config user.name "$GITHUB_ACTOR"
+      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      #     sed -E -i "s#image: ${IMAGE}:.+#image: ${IMAGE}:${{ needs.set-version.outputs.version }}#" vars/global.yaml
+      #     git add .
+      #     git --no-pager diff --cached
+      #     git status
+      #     git commit -a -m "ci: Bump HAHAHA to version ${{ needs.set-version.outputs.version }}"
+      #     git push
