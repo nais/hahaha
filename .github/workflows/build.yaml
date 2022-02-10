@@ -39,6 +39,9 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up toolchain
         uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
       - name: Test
         uses: actions-rs/cargo@v1
         with:
