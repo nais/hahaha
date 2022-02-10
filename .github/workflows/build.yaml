@@ -17,14 +17,14 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - id: generate_version
-        run: echo ::set-output version="$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
+        run: echo ::set-output name=version::"$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
     outputs:
       version: ${{ steps.generate_version.outputs.version }}
   bogus:
     runs-on: ubuntu-20.04
     needs: set-version
     steps:
-      - run: echo ${{ steps.get-token.outputs.token }}
+      - run: echo ${{ needs.set-version.outputs.version }}
   build:
     name: Test, build and push Docker image
     runs-on: ubuntu-20.04
