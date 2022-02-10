@@ -16,18 +16,13 @@ jobs:
     name: Generate version
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v1
       - id: version
         run: echo ::set-output name=version::"$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
-      - id: semver
-        run: echo ::set-output name=semver::"$(cat Cargo.toml | grep -e '^version' | cut -d\" -f2)"
       - id: tag
         run: echo ::set-output name=tag::"${IMAGE}:${{ steps.version.outputs.version }}"
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.tag.outputs.tag }}
-      semver: ${{ steps.semver.outputs.semver }}
   build:
     name: Test, build and push Docker image
     runs-on: ubuntu-20.04
@@ -47,7 +42,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-dockerx6-${{ needs.set-version.outputs.semver }}
+          key: ${{ runner.os }}-dockerx6-${{ needs.set-version.outputs.version }}
           restore-keys: |
             ${{ runner.os }}-dockerx6-
       - uses: actions/cache@v2
