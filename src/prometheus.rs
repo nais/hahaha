@@ -44,7 +44,7 @@ where
     F: Future<Output = ()>,
 {
     let addr = ([127, 0, 0, 1], port).into();
-    info!("serving prometheus on http://{addr}");
+    info!("Serving prometheus on http://{addr}");
 
     let service = make_service_fn(move |_| async { Ok::<_, hyper::Error>(service_fn(metric_service)) });
     let err = Server::bind(&addr)
@@ -52,8 +52,8 @@ where
         .with_graceful_shutdown(shutdown)
         .await;
     match &err {
-        Ok(()) => info!("stopped prometheus server successfully"),
-        Err(e) => error!("error while shutting down: {e}"),
+        Ok(()) => info!("Stopped prometheus server successfully"),
+        Err(e) => error!("Error while shutting down: {e}"),
     }
     Ok(())
 }

@@ -29,3 +29,5 @@ hyper = { version = "0.14", features = ["server", "runtime"] }
 # prometheus metrics
 lazy_static = "1.4.0"
 prometheus = "0.13.0"
+
+hostname = "^0.3"

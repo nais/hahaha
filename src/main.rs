@@ -29,9 +29,18 @@ async fn main() -> anyhow::Result<()> {
 
     let pods: Api<Pod> = Api::all(client.clone());
     let lp = ListParams::default().timeout(30).labels("nais.io/naisjob=true");
+
+    let h = hostname::get()?;
+    let host_name = match h.to_str() {
+        Some(s) => s,
+        None => "hahaha-1337",
+    };
+
+
+    info!("My hostname is {}!", host_name);
     let reporter = Reporter {
         controller: "hahaha".into(),
-        instance: Some("hahaha-1234".into()), // TODO get instance from cluster when deployed
+        instance: Some(host_name.into()),
     };
 
     let mut ew = try_flatten_applied(watcher(pods, lp)).boxed();
