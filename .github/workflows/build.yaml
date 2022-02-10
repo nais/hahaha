@@ -20,11 +20,6 @@ jobs:
         run: echo ::set-output name=version::"$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
     outputs:
       version: ${{ steps.generate_version.outputs.version }}
-  bogus:
-    runs-on: ubuntu-20.04
-    needs: set-version
-    steps:
-      - run: echo ${{ needs.set-version.outputs.version }}
   build:
     name: Test, build and push Docker image
     runs-on: ubuntu-20.04
@@ -37,11 +32,6 @@ jobs:
         with:
           path: ~/.cargo/registry/
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git/
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
@@ -49,9 +39,6 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       - name: Set up toolchain
         uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
       - name: Test
         uses: actions-rs/cargo@v1
         with:
@@ -99,17 +86,13 @@ jobs:
           res=".nais"
           static_file="../nais-yaml/templates/hahaha.yaml"
           cat $res/hahaha.yaml $res/clusterrole.yaml $res/clusterrolebinding.yaml $res/networkpolicy.yaml > $static_file
-          
-          echo "just checking that we get here"
-          cat $static_file
-
-      # - run: |
-      #     cd nais-yaml
-      #     git config user.name "$GITHUB_ACTOR"
-      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-      #     sed -E -i "s#image: ${IMAGE}:.+#image: ${IMAGE}:${{ needs.set-version.outputs.version }}#" vars/global.yaml
-      #     git add .
-      #     git --no-pager diff --cached
-      #     git status
-      #     git commit -a -m "ci: Bump HAHAHA to version ${{ needs.set-version.outputs.version }}"
-      #     git push
+      - run: |
+           cd nais-yaml
+           git config user.name "$GITHUB_ACTOR"
+           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+           sed -E -i "s#image: ${IMAGE}:.+#image: ${IMAGE}:${{ needs.set-version.outputs.version }}#" vars/global.yaml
+           git add .
+           git --no-pager diff --cached
+           git status
+           git commit -a -m "ci: Bump HAHAHA to version ${{ needs.set-version.outputs.version }}"
+           git push
