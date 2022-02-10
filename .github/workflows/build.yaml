@@ -18,12 +18,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
-      - id: generate_version
+      - id: version
         run: echo ::set-output name=version::"$(date +'%Y-%m-%d')-${GITHUB_SHA::8}"
       - id: semver
         run: echo ::set-output name=semver::"$(cat Cargo.toml | grep -e '^version' | cut -d\" -f2)"
+      - id: tag
+        run: echo ::set-output name=tag::"${IMAGE}:${{ steps.version.outputs.version }}"
     outputs:
-      version: ${{ steps.generate_version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.tag.outputs.tag }}
+      semver: ${{ steps.semver.outputs.semver }}
   build:
     name: Test, build and push Docker image
     runs-on: ubuntu-20.04
@@ -81,7 +85,7 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${IMAGE}:${{ needs.set-version.outputs.version }}
+          tags: ${{ needs.set-version.outputs.tag }}
           cache-from: type=gha,scope=version5
           cache-to: type=gha,scope=version5,mode=max
   nais-yaml:
@@ -114,7 +118,7 @@ jobs:
            cd nais-yaml
            git config user.name "$GITHUB_ACTOR"
            git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-           sed -E -i "s#image: ${IMAGE}:.+#image: ${IMAGE}:${{ needs.set-version.outputs.version }}#" vars/global.yaml
+           sed -E -i "s#image: ${IMAGE}:.+#image: ${{ needs.set-version.outputs.tag }}#" vars/global.yaml
            git add .
            git --no-pager diff --cached
            git status
