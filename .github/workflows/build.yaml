@@ -48,10 +48,15 @@ jobs:
           command: test
           args: --release
       - name: Build binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
+        run: |
+          mkdir -p ~/.cargo/{git,registry}
+          docker run --rm -t \
+              --mount type=bind,source=${{ github.workspace }},target=/volume \
+              --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
+              --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
+              clux/muslrust:stable \
+              cargo build --release
+          cp target/x86_64-unknown-linux-musl/release/hahaha .
       - name: Login to GitHub Docker Registry
         uses: docker/login-action@v1
         with:
