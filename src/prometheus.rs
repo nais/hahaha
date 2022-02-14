@@ -6,19 +6,19 @@ use tracing::{error, info};
 
 lazy_static! {
     pub static ref SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
-        "sidecar_shutdowns",
+        "hahaha_sidecar_shutdowns",
         "Number of sidecar shutdowns",
         &["container", "job_name", "namespace"],
     )
     .unwrap();
     pub static ref FAILED_SIDECAR_SHUTDOWNS: IntCounterVec = register_int_counter_vec!(
-        "failed_sidecar_shutdowns",
+        "hahaha_failed_sidecar_shutdowns",
         "Number of failed sidecar shutdowns",
         &["container", "job_name", "namespace"],
     )
     .unwrap();
     pub static ref TOTAL_UNSUCCESSFUL_EVENT_POSTS: IntCounter = register_int_counter!(
-        "total_unsuccessful_event_posts",
+        "hahaha_total_unsuccessful_event_posts",
         "Total number of unsuccessful Kubernetes Event posts"
     )
     .unwrap();

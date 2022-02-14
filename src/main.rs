@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let client = Client::try_default().await?;
 
     let pods: Api<Pod> = Api::all(client.clone());
-    let lp = ListParams::default().timeout(30).labels("nais.io/naisjob=true");
+    let lp = ListParams::default().labels("nais.io/naisjob=true");
 
     let h = hostname::get()?;
     let host_name = match h.to_str() {
