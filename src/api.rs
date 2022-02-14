@@ -91,6 +91,7 @@ impl DestroyerActions for Api<Pod> {
             Err(_) => return Err(anyhow!(format!( "HTTP request ({method} {path} at port {port}) failed: request timeout")))
         };
         let status_code = parts.status;
+        info!("Got status code {status_code}");
         if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
             let body_str = std::str::from_utf8(&body_bytes)?;
