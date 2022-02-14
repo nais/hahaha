@@ -15,8 +15,22 @@ This means that Ginuudan often doesn't show up for cleaning duty if things (e.g.
 
 HAHAHA is a more naive implementation that handles Pods without requiring any state beyond what's presented by a Pod whose main Container has reached a finished state.
 
+## Alpha availability
 
-### Small technical differences between HAHAHA and Ginuudan
+This is a feature somewhat hidden by obscurity at the moment.
+As such, 
+If you would like to participate in testing this operator, add the following configuration to your Naisjob's configuration:
+
+```yaml
+metadata:
+  annotations:
+    nais.io/naisjob: "true"
+```
+
+This will make it so that HAHAHA will take over duties from Ginuudan.
+
+
+## Small technical differences between HAHAHA and Ginuudan
 
 1. Ginuudan looks for Pods with a specific annotation, HAHAHA uses a label.
     * Labels should better leverage underlying Kubernetes APIs for watching Pods.
