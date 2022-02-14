@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::actions::{Action, ActionType};
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -64,6 +66,7 @@ impl DestroyerActions for Api<Pod> {
         let pf_ports = pf.ports();
         let stream = pf_ports[0].stream().unwrap();
         let (mut sender, connection) = hyper::client::conn::handshake(stream).await?;
+
         tokio::spawn(async move {
             if let Err(e) = connection.await {
                 error!("Error in connection: {e}");
@@ -81,7 +84,12 @@ impl DestroyerActions for Api<Pod> {
 
         info!("Sending port-forward request ({method} {path} at {port})");
 
-        let (parts, body) = sender.send_request(req).await?.into_parts();
+        let req_future = sender.send_request(req);
+
+        let (parts, body) = match tokio::time::timeout(Duration::from_millis(200), req_future).await {
+            Ok(req) => req?.into_parts(),
+            Err(_) => return Err(anyhow!(format!( "HTTP request ({method} {path} at port {port}) failed: request timeout")))
+        };
         let status_code = parts.status;
         if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
