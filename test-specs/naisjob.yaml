@@ -3,6 +3,7 @@ kind: Naisjob
 metadata:
   labels:
     team: aura
+    nais.io/naisjob: "true"
   name: oh-no
   namespace: aura
 spec:
