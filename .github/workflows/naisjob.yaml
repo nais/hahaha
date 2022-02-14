@@ -1,0 +1,21 @@
+name: Build and deploy test job
+on: 
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'test-specs/naisjob.yaml'
+      - '.github/naisjob.yaml'
+
+jobs:
+  deploy:
+    name: Deploy to NAIS
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: deploy to dev
+      uses: nais/deploy/actions/deploy@v1
+      env:
+        APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+        CLUSTER: dev-gcp
+        RESOURCE: test-specs/naisjob.yaml

@@ -1,0 +1,18 @@
+apiVersion: nais.io/v1
+kind: Naisjob
+metadata:
+  labels:
+    team: aura
+  name: oh-no
+  namespace: aura
+spec:
+  image: navikt/perl
+  schedule: "0/5 * * * *"
+  command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(4000)"]
+  secureLogs:
+    enabled: true
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_12
+        databases:
+          - name: oh-no-db
