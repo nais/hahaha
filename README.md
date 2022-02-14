@@ -17,9 +17,9 @@ HAHAHA is a more naive implementation that handles Pods without requiring any st
 
 ## Alpha availability
 
-This is a feature somewhat hidden by obscurity at the moment.
-As such, 
-If you would like to participate in testing this operator, add the following configuration to your Naisjob's configuration:
+The plan is to fine tune a few things before HAHAHA takes over for Ginuudan on a permanent basis, but it's possible to use HAHAHA right now.
+This is a feature somewhat hidden by obscurity at the moment, and won't be added to the nais documentation.
+If you would like to participate in testing, add the following configuration to your Naisjob's configuration:
 
 ```yaml
 metadata:
@@ -27,8 +27,7 @@ metadata:
     nais.io/naisjob: "true"
 ```
 
-This will make it so that HAHAHA will take over duties from Ginuudan.
-
+This will make it so that HAHAHA will take over cleaning duties from Ginuudan.
 
 ## Small technical differences between HAHAHA and Ginuudan
 
