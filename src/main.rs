@@ -83,6 +83,7 @@ async fn main() -> anyhow::Result<()> {
 
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
+            info!("Found {}", &sidecar_name);
             let action = match actions.get(&sidecar_name) {
                 Some(action) => action,
                 None => {

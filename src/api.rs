@@ -40,6 +40,7 @@ impl Destroyer for Api<Pod> {
 impl DestroyerActions for Api<Pod> {
     async fn shutdown_exec(&self, action: &Action, pod_name: &str, container_name: &str) -> anyhow::Result<()> {
         let command: Vec<&str> = action.command.as_ref().unwrap().split(' ').collect();
+        info!("Running command: {:?}", action.command.as_ref().unwrap());
         match self
             .exec(
                 pod_name,
@@ -77,6 +78,8 @@ impl DestroyerActions for Api<Pod> {
             .method(method)
             .body(Body::from(""))
             .unwrap();
+
+        info!("Sending port-forward request ({method} {path} at {port})");
 
         let (parts, body) = sender.send_request(req).await?.into_parts();
         let status_code = parts.status;
