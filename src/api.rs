@@ -86,7 +86,7 @@ impl DestroyerActions for Api<Pod> {
 
         let req_future = sender.send_request(req);
 
-        let (parts, body) = match tokio::time::timeout(Duration::from_millis(200), req_future).await {
+        let (parts, body) = match tokio::time::timeout(Duration::from_secs(1), req_future).await {
             Ok(req) => req?.into_parts(),
             Err(_) => return Err(anyhow!(format!( "HTTP request ({method} {path} at port {port}) failed: request timeout")))
         };
