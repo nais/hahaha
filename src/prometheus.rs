@@ -43,7 +43,7 @@ pub async fn prometheus_server<F>(port: u16, shutdown: F) -> hyper::Result<()>
 where
     F: Future<Output = ()>,
 {
-    let addr = ([127, 0, 0, 1], port).into();
+    let addr = ([0, 0, 0, 0], port).into();
     info!("serving prometheus on http://{addr}");
 
     let service = make_service_fn(move |_| async { Ok::<_, hyper::Error>(service_fn(metric_service)) });

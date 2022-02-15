@@ -13,7 +13,7 @@ spec:
     max: 1
   strategy:
     type: Recreate
+  port: 8999
   prometheus:
     enabled: true
     path: /
-    port: "8999"
