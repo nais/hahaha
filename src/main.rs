@@ -10,7 +10,7 @@ use kube::{
 };
 use std::sync::Arc;
 use tokio::sync::Notify;
-use tracing::{error, info, warn};
+use tracing::{error, trace, warn};
 
 mod actions;
 mod api;
@@ -51,9 +51,13 @@ async fn main() -> anyhow::Result<()> {
 
     while let Some(pod) = ew.try_next().await? {
         let pod_name = pod.name();
+        let namespace = match pod.namespace() {
+            Some(namespace) => namespace,
+            None => "default".into(),
+        };
 
         let running_sidecars = pod.sidecars().unwrap_or_else(|err| {
-            info!("Getting running sidecars for {pod_name}: {err}");
+            warn!("{pod_name}: getting running sidecars: {err}");
             Vec::new()
         });
         if running_sidecars.is_empty() {
@@ -61,44 +65,40 @@ async fn main() -> anyhow::Result<()> {
             continue;
         }
 
-        let namespace = match pod.namespace() {
-            Some(namespace) => namespace,
-            None => "default".into(),
-        };
         // we need a namespaced api to `exec` and `portforward` into the target pod.
         let api: Api<Pod> = Api::namespaced(client.clone(), &namespace);
 
         // set up a recorder for publishing events to the Pod
         let recorder = Recorder::new(client.clone(), reporter.clone(), pod.object_ref(&()));
 
-        info!("{pod_name} in namespace {namespace} needs help shutting down some residual containers!");
+        trace!("{pod_name}: needs help shutting down some residual containers");
 
         let job_name = match pod.job_name() {
             Ok(name) => name,
             Err(e) => {
-                warn!("Getting job name from pod: {e}");
+                warn!("{pod_name}: getting job name from pod: {e}");
                 continue;
             }
         };
 
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
-            info!("Found {}", &sidecar_name);
+            trace!("{pod_name}: found sidecar {sidecar_name}");
             let action = match actions.get(&sidecar_name) {
                 Some(action) => action,
                 None => {
-                    warn!("I don't know how to shut down {sidecar_name} (in {pod_name} in namespace {namespace})");
+                    warn!("{pod_name}: no defined action for {sidecar_name}");
                     continue;
                 }
             };
             let res = api.shutdown(action, &pod_name, &sidecar_name).await;
             if let Err(err) = res {
-                error!("Couldn't shutdown: {err}");
+                error!("{pod_name}: couldn't shutdown: {err}");
                 if let Err(e) = recorder
                     .warn(format!("Unsuccessfully shut down container {sidecar_name}: {err}"))
                     .await
                 {
-                    error!("Couldn't publish Kubernetes Event: {e}");
+                    error!("{pod_name}: couldn't publish Kubernetes Event: {e}");
                     TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
                 }
                 FAILED_SIDECAR_SHUTDOWNS
@@ -107,7 +107,7 @@ async fn main() -> anyhow::Result<()> {
                 continue;
             }
             if let Err(e) = recorder.info(format!("Shut down container {sidecar_name}")).await {
-                error!("Couldn't publish Kubernetes Event: {e}");
+                error!("{pod_name}: couldn't publish Kubernetes Event: {e}");
                 continue;
             }
             SIDECAR_SHUTDOWNS

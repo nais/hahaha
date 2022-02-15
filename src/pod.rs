@@ -42,11 +42,11 @@ impl Sidecars for Pod {
     fn job_name(&self) -> anyhow::Result<String> {
         let labels = match &self.metadata.labels {
             Some(l) => l,
-            None => return Err(anyhow!("No labels found on pod")),
+            None => return Err(anyhow!("no labels found on pod")),
         };
         let app_name = match labels.get("app") {
             Some(name) => name,
-            None => return Err(anyhow!("No app name found on pod")),
+            None => return Err(anyhow!("no app name found on pod")),
         };
         return Ok(app_name.into());
     }
@@ -67,7 +67,7 @@ impl SidecarStates for Pod {
         let app = JobPod::from(self)?;
         match app.statuses.iter().find(|c| c.name == app.name) {
             Some(c) => Ok(c.clone()),
-            None => Err(anyhow!("Couldn't determine main container")),
+            None => Err(anyhow!("couldn't determine main container")),
         }
     }
 }
@@ -81,15 +81,15 @@ impl JobPod {
     pub fn from(pod: &Pod) -> Result<JobPod> {
         let labels = match &pod.metadata.labels {
             Some(l) => l,
-            None => return Err(anyhow!("No labels found on pod")),
+            None => return Err(anyhow!("no labels found on pod")),
         };
         let app_name = match labels.get("app") {
             Some(name) => name,
-            None => return Err(anyhow!("No app name found on pod")),
+            None => return Err(anyhow!("no app name found on pod")),
         };
         let pod_status = match &pod.status {
             Some(spec) => spec,
-            None => return Err(anyhow!("No spec found on pod")),
+            None => return Err(anyhow!("no spec found on pod")),
         };
 
         let container_statuses: Vec<ContainerStatus> = match &pod_status.container_statuses {
