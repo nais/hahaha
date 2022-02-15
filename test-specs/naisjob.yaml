@@ -10,7 +10,7 @@ metadata:
 spec:
   image: navikt/perl
   schedule: "0/5 * * * *"
-  command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(4000)"]
+  command: ["perl", "-le", "sleep(40);print 'job complete'"]
   secureLogs:
     enabled: true
   gcp:
