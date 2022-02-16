@@ -1,4 +1,3 @@
-use chrono::Utc;
 use k8s_openapi::{
     api::{core::v1::Event, core::v1::ObjectReference},
     apimachinery::pkg::apis::meta::v1::Time,
@@ -49,7 +48,7 @@ impl Recorder {
 
     /// Helper method to create an event
     fn event(&self, type_: String, message: String) -> Event {
-        let now = Utc::now();
+        let now = k8s_openapi::chrono::Utc::now();
         Event {
             action: Some("Killing".into()),
             reason: Some("Killing".into()),

@@ -22,7 +22,7 @@ use crate::{api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt().json().try_init().unwrap();
+    tracing_subscriber::fmt().json().flatten_event(true).init();
 
     let actions = actions::generate();
     let client = Client::try_default().await?;
