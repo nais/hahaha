@@ -10,7 +10,8 @@ use kube::{
 };
 use std::sync::Arc;
 use tokio::sync::Notify;
-use tracing::{error, trace, warn};
+use tracing::{error, debug, warn};
+use tracing_subscriber::prelude::*;
 
 mod actions;
 mod api;
@@ -22,7 +23,9 @@ use crate::{api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt().json().flatten_event(true).init();
+    let filter_layer = tracing_subscriber::EnvFilter::from_default_env();
+    let format_layer = tracing_subscriber::fmt::layer().json().flatten_event(true); 
+    tracing_subscriber::registry().with(filter_layer).with(format_layer).init();
 
     let actions = actions::generate();
     let client = Client::try_default().await?;
@@ -71,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
         // set up a recorder for publishing events to the Pod
         let recorder = Recorder::new(client.clone(), reporter.clone(), pod.object_ref(&()));
 
-        trace!("{pod_name}: needs help shutting down some residual containers");
+        debug!("{pod_name}: needs help shutting down some residual containers");
 
         let job_name = match pod.job_name() {
             Ok(name) => name,
@@ -83,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
 
         for sidecar in running_sidecars {
             let sidecar_name = sidecar.name;
-            trace!("{pod_name}: found sidecar {sidecar_name}");
+            debug!("{pod_name}: found sidecar {sidecar_name}");
             let action = match actions.get(&sidecar_name) {
                 Some(action) => action,
                 None => {

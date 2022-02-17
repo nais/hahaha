@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use hyper::{body, Body, Request};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, AttachParams};
-use tracing::{error, info, trace};
+use tracing::{error, info, debug};
 
 /// Shutdown method for Apis with type Pod
 #[async_trait]
@@ -42,7 +42,7 @@ impl Destroyer for Api<Pod> {
 impl DestroyerActions for Api<Pod> {
     async fn shutdown_exec(&self, action: &Action, pod_name: &str, container_name: &str) -> anyhow::Result<()> {
         let command: Vec<&str> = action.command.as_ref().unwrap().split(' ').collect();
-        trace!("{pod_name}: running command: {command:?}");
+        debug!("{pod_name}: running command: {command:?}");
         match self
             .exec(
                 pod_name,
@@ -81,7 +81,7 @@ impl DestroyerActions for Api<Pod> {
             .body(Body::from(""))
             .unwrap();
 
-        trace!("{pod_name}: sending HTTP request ({method} {path} at {port})");
+        debug!("{pod_name}: sending HTTP request ({method} {path} at {port})");
 
         let req_future = sender.send_request(req);
 
@@ -94,7 +94,7 @@ impl DestroyerActions for Api<Pod> {
             }
         };
         let status_code = parts.status;
-        trace!("{pod_name}: got status code {status_code}");
+        debug!("{pod_name}: got status code {status_code}");
         if status_code != 200 {
             let body_bytes = body::to_bytes(body).await?;
             let body_str = std::str::from_utf8(&body_bytes)?;
