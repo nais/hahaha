@@ -1,4 +1,5 @@
 {{ if .hahaha.alerts }}
+---
 apiVersion: "nais.io/v1"
 kind: "Alert"
 metadata:
