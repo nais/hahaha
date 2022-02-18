@@ -13,8 +13,3 @@ spec:
   command: ["perl", "-le", "sleep(40);print 'job complete'"]
   secureLogs:
     enabled: true
-  gcp:
-    sqlInstances:
-      - type: POSTGRES_12
-        databases:
-          - name: oh-no-db

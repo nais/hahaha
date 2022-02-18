@@ -11,11 +11,18 @@ jobs:
   deploy:
     name: Deploy to NAIS
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cluster:
+         - dev-gcp
+         - prod-gcp
+         - dev-fss
+         - prod-fss
     steps:
     - uses: actions/checkout@v1
-    - name: deploy to dev
+    - name: deploy to ${{ matrix.cluster }}
       uses: nais/deploy/actions/deploy@v1
       env:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: dev-gcp
+        CLUSTER: ${{ matrix.cluster }}
         RESOURCE: test-specs/naisjob.yaml
