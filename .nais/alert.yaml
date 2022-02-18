@@ -1,0 +1,21 @@
+{{ if .hahaha.alerts }}
+apiVersion: "nais.io/v1"
+kind: "Alert"
+metadata:
+  name: hahaha-alerts
+  namespace: aura
+  labels:
+    team: aura
+spec:
+  receivers:
+    slack:
+      channel: "{{ .alerts.slackChannel }}"
+  alerts:
+    - alert: HAHAHA hasn't turned off any sidecars the past 15 minutes
+      expr: sum(increase(hahaha_sidecar_shutdowns[15m])) < 0.5
+      for: 5m
+      description: "HAHAHA hasn't turned off any sidecars recently, which means that Pods created by Naisjobs won't be cleaned up."
+      action: "Check logs:\n- `kubectl logs -n aura $(kubectl get pod -n aura -l app=hahaha --no-headers -o custom-columns=\":metadata.name\") hahaha`\n\nA restart of HAHAHA will likely solve the issue."
+      sla: respond within office hours
+      severity: danger
+{{ end }}

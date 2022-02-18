@@ -108,7 +108,7 @@ jobs:
           cd hahaha
           res=".nais"
           static_file="../nais-yaml/templates/hahaha.yaml"
-          cat $res/hahaha.yaml $res/clusterrole.yaml $res/clusterrolebinding.yaml $res/networkpolicy.yaml > $static_file
+          cat $res/hahaha.yaml $res/clusterrole.yaml $res/clusterrolebinding.yaml $res/networkpolicy.yaml $res/alert.yaml > $static_file
       - run: |
            cd nais-yaml
            git config user.name "$GITHUB_ACTOR"
