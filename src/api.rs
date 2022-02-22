@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use hyper::{body, Body, Request};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, AttachParams};
-use tracing::{error, info, debug};
+use tracing::{debug, error, info};
 
 /// Shutdown method for Apis with type Pod
 #[async_trait]
