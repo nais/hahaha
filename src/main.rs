@@ -5,12 +5,8 @@ use futures::StreamExt;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams},
-    runtime::{
-        controller::Context,
-        events::Reporter,
-        Controller,
-    },
-    Client
+    runtime::{controller::Context, events::Reporter, Controller},
+    Client,
 };
 use std::sync::Arc;
 use tokio::sync::Notify;
@@ -67,11 +63,7 @@ async fn main() -> anyhow::Result<()> {
         .run(
             reconciler::reconcile,
             reconciler::error_policy,
-            Context::new(reconciler::Data::new(
-                client,
-                reporter,
-                actions,
-            )),
+            Context::new(reconciler::Data::new(client, reporter, actions)),
         )
         .for_each(|res| async move {
             match res {

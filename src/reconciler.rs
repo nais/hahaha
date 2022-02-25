@@ -1,11 +1,17 @@
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use k8s_openapi::api::core::v1::Pod;
-use kube::{Client, runtime::{events::Reporter, controller::{Context, ReconcilerAction}}, ResourceExt, Api, Resource};
+use kube::{
+    runtime::{
+        controller::{Context, ReconcilerAction},
+        events::Reporter,
+    },
+    Api, Client, Resource, ResourceExt,
+};
 use thiserror::Error;
-use tracing::{warn, debug};
+use tracing::{debug, warn};
 
-use crate::{actions::Action, pod::Sidecars, events::Recorder, api::Destroyer, prometheus::*};
+use crate::{actions::Action, api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
 
 static REQUEUE_SECONDS: u64 = 300;
 
@@ -27,7 +33,11 @@ pub struct Data {
 
 impl Data {
     pub fn new(client: Client, reporter: Reporter, actions: BTreeMap<String, Action>) -> Data {
-        Data { client, reporter, actions }
+        Data {
+            client,
+            reporter,
+            actions,
+        }
     }
 }
 
