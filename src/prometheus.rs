@@ -22,6 +22,12 @@ lazy_static! {
         "Total number of unsuccessful Kubernetes Event posts"
     )
     .unwrap();
+    pub static ref UNSUPPORTED_SIDECARS: IntCounterVec = register_int_counter_vec!(
+        "hahaha_unsupported_sidecars",
+        "Number of unsupported sidecars, by sidecar",
+        &["container", "job_name", "namespace"],
+    )
+    .unwrap();
 }
 
 /// The function which triggers on any request to the server (incl. any path)
