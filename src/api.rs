@@ -1,4 +1,5 @@
-use std::time::Duration;
+#[cfg(test)]
+use mockall::automock;
 
 use crate::actions::{Action, ActionType};
 use anyhow::anyhow;
@@ -6,9 +7,11 @@ use async_trait::async_trait;
 use hyper::{body, Body, Request};
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, AttachParams};
-use tracing::{error, info, debug};
+use std::time::Duration;
+use tracing::{debug, error, info};
 
 /// Shutdown method for Apis with type Pod
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait Destroyer {
     /// Shuts down a container in a given pod with a given Action

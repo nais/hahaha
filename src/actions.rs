@@ -71,9 +71,3 @@ impl ActionInsertions for BTreeMap<String, Action> {
         );
     }
 }
-
-#[test]
-fn generate_len_5() {
-    let actions = generate();
-    assert_eq!(5, actions.len())
-}
