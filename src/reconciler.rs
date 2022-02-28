@@ -154,8 +154,8 @@ mod tests {
     };
     use tower::ServiceBuilder;
 
-    fn make_data() -> Data {
-        // a bogus kube client that doesn't connect anywhere useful
+    /// creates a bogus kube client that doesn't connect anywhere useful
+    fn make_data() -> Data {  
         let config = Config::new("/".parse::<Uri>().unwrap());
         let service = ServiceBuilder::new()
             .layer(config.base_uri_layer())
