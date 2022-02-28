@@ -63,7 +63,7 @@ jobs:
               --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
               --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
               clux/muslrust:stable \
-              cargo test --release
+              cargo test --release -- --test-threads 1
       - name: Build binary
         run: |
           docker run --rm -t \
