@@ -1,11 +1,5 @@
 name: Build and deploy test job
-on: 
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'test-specs/naisjob.yaml'
-      - '.github/workflows/naisjob.yaml'
+on: workflow_dispatch
 
 jobs:
   deploy:
@@ -15,9 +9,6 @@ jobs:
       matrix:
         cluster:
          - dev-gcp
-         - prod-gcp
-         - dev-fss
-         - prod-fss
     steps:
     - uses: actions/checkout@v1
     - name: deploy to ${{ matrix.cluster }}
@@ -25,4 +16,4 @@ jobs:
       env:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
         CLUSTER: ${{ matrix.cluster }}
-        RESOURCE: test-specs/naisjob.yaml
+        RESOURCE: test-specs/naisjob-without-schedule.yaml

@@ -15,19 +15,7 @@ This means that Ginuudan often doesn't show up for cleaning duty if things (e.g.
 
 HAHAHA is a more naive implementation that handles Pods without requiring any state beyond what's presented by a Pod whose main Container has reached a finished state.
 
-## Alpha availability
-
-The plan is to fine tune a few things before HAHAHA takes over for Ginuudan on a permanent basis, but it's possible to use HAHAHA right now.
-This is a feature somewhat hidden by obscurity at the moment, and won't be added to the nais documentation.
-If you would like to participate in testing, add the following configuration to your Naisjob's configuration:
-
-```yaml
-metadata:
-  annotations:
-    nais.io/naisjob: "true"
-```
-
-This will make it so that HAHAHA will take over cleaning duties from Ginuudan.
+HAHAHA is now the default janitor for Naisjobs, no additional work needs to be done to have HAHAHA deal with your Naisjob.
 
 ## Small technical differences between HAHAHA and Ginuudan
 
