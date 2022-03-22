@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     runtime::{
-        controller::{Context, ReconcilerAction},
+        controller::{Context, Action as ReconcilerAction},
         events::Reporter,
     },
     Api, Client, Resource, ResourceExt,
@@ -64,7 +64,7 @@ pub async fn reconcile_inner(
 
     if running_sidecars.is_empty() {
         // There's no need to ever look at this pod again if there are no running sidecars
-        return Ok(ReconcilerAction { requeue_after: None });
+        return Ok(ReconcilerAction::await_change());
     }
 
     // set up a recorder for publishing events to the Pod
@@ -81,7 +81,7 @@ pub async fn reconcile_inner(
         Err(e) => {
             // this will never occur: running_sidecars will return on the same case
             warn!("{pod_name}: could not find app label (will not retry): {e}");
-            return Ok(ReconcilerAction { requeue_after: None });
+            return Ok(ReconcilerAction::await_change());
         }
     };
 
@@ -121,13 +121,11 @@ pub async fn reconcile_inner(
             .inc();
     }
 
-    Ok(ReconcilerAction { requeue_after: None })
+    Ok(ReconcilerAction::await_change())
 }
 
 pub fn error_policy(_error: &Error, _ctx: Context<Data>) -> ReconcilerAction {
-    ReconcilerAction {
-        requeue_after: Some(Duration::from_secs(30)),
-    }
+    ReconcilerAction::requeue(Duration::from_secs(30))
 }
 
 #[cfg(test)]
