@@ -1,19 +1,22 @@
 name: Deploy test naisjob (no schedule)
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      cluster:
+        description: "Cluster to deploy to"
+        default: "dev-gcp"
+        required: false
+        type: string
 
 jobs:
   deploy:
     name: Deploy to NAIS
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        cluster:
-         - dev-gcp
     steps:
     - uses: actions/checkout@v1
-    - name: deploy to ${{ matrix.cluster }}
+    - name: deploy to ${{ github.event.inputs.cluster }}
       uses: nais/deploy/actions/deploy@v1
       env:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: ${{ matrix.cluster }}
+        CLUSTER: ${{ github.event.inputs.cluster }}
         RESOURCE: test-specs/naisjob-without-schedule.yaml
