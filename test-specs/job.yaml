@@ -4,6 +4,7 @@ metadata:
   name: pi
   labels:
     app: pi
+    team: aura
   namespace: aura
 spec:
   template:
