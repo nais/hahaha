@@ -10,5 +10,3 @@ metadata:
 spec:
   image: navikt/perl
   command: ["perl", "-le", "sleep(40);print 'job complete'"]
-  secureLogs:
-    enabled: true
