@@ -7,29 +7,16 @@ on:
         default: "dev-gcp"
         required: false
         type: string
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'test-specs/naisjob.yaml'
-      - '.github/workflows/naisjob.yaml'
 
 jobs:
   deploy:
     name: Deploy to NAIS
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        cluster:
-         - dev-gcp
-         - prod-gcp
-         - dev-fss
-         - prod-fss
     steps:
     - uses: actions/checkout@v1
-    - name: deploy to ${{ matrix.cluster }}
+    - name: deploy to ${{ github.event.inputs.cluster }}
       uses: nais/deploy/actions/deploy@v1
       env:
         APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-        CLUSTER: ${{ matrix.cluster }}
+        CLUSTER: ${{ github.event.inputs.cluster }}
         RESOURCE: test-specs/naisjob.yaml
