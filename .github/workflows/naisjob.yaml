@@ -1,5 +1,12 @@
 name: Deploy test naisjob /w schedule
-on: 
+on:
+  workflow_dispatch:
+    inputs:
+      cluster:
+        description: "Cluster to deploy to"
+        default: "dev-gcp"
+        required: false
+        type: string
   push:
     branches:
       - 'main'
