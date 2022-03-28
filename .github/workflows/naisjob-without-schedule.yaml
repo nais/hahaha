@@ -1,4 +1,4 @@
-name: Deploy test naisjob (no schedule)
+name: Deploy Naisjob (no schedule)
 on:
   workflow_dispatch:
     inputs:

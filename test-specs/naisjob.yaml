@@ -11,3 +11,5 @@ spec:
   image: navikt/perl
   schedule: "0/5 * * * *"
   command: ["perl", "-le", "sleep(40);print 'job complete'"]
+  secureLogs:
+    enabled: true
