@@ -37,3 +37,7 @@ HAHAHA is now the default janitor for Naisjobs, no additional work needs to be d
 | vks-sidecar | runs if your Naisjob has `spec.vault.sidecar` set to `true` |
 
 You can view what HAHAHA tries to do to these sidecars when encountered in [actions.rs](https://github.com/nais/hahaha/blob/main/src/actions.rs#L9-L13)
+
+## Things about development that you might want to know
+
+Running HAHAHA's tests should be done by invoking `cargo test -- --test-threads 1`. The reason is that while the Prometheus test generally gets started first, it's usually the last to finish. By limiting the thread count to 1, we'll ensure that it finishes before the other tests run. The other tests are more like integration tests, and also mutate the Prometheus state, which makes it kind of hard to run them in parallel.

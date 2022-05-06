@@ -63,8 +63,7 @@ impl DestroyerActions for Api<Pod> {
     async fn shutdown_portforward(&self, action: &Action, pod_name: &str, container_name: &str) -> anyhow::Result<()> {
         let port = action.port.unwrap();
         let mut pf = self.portforward(pod_name, &[port]).await?;
-        let pf_ports = pf.ports();
-        let stream = pf_ports[0].stream().unwrap();
+        let stream = pf.take_stream(port).unwrap();
         let (mut sender, connection) = hyper::client::conn::handshake(stream).await?;
 
         let inner_pod_name = pod_name.to_string();
