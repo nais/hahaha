@@ -8,6 +8,7 @@ use kube::{
     runtime::{controller::Context, events::Reporter, Controller},
     Client,
 };
+use std::env;
 use std::sync::Arc;
 use tokio::sync::Notify;
 use tracing::{debug, warn};
@@ -26,7 +27,8 @@ static PROMETHEUS_PORT: u16 = 8999;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let filter_layer = tracing_subscriber::EnvFilter::from_default_env();
+    let rust_log_env = env::var("RUST_LOG").unwrap_or_else(|_| "hahaha=info,kube=warn".to_string());
+    let filter_layer = tracing_subscriber::EnvFilter::builder().with_regex(false).parse_lossy(&rust_log_env);
     let format_layer = tracing_subscriber::fmt::layer().json().flatten_event(true);
     tracing_subscriber::registry()
         .with(filter_layer)
