@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     runtime::{
-        controller::{Context, Action as ReconcilerAction},
+        controller::{Action as ReconcilerAction},
         events::Reporter,
     },
     Api, Client, Resource, ResourceExt,
@@ -37,21 +37,21 @@ impl Data {
     }
 }
 
-pub async fn reconcile(pod: Arc<Pod>, ctx: Context<Data>) -> Result<ReconcilerAction, Error> {
+pub async fn reconcile(pod: Arc<Pod>, ctx: Arc<Data>) -> Result<ReconcilerAction, Error> {
     let namespace = match pod.namespace() {
         Some(namespace) => namespace,
         None => "default".into(),
     };
-    let api: Api<Pod> = Api::namespaced(ctx.get_ref().client.clone(), &namespace);
+    let api: Api<Pod> = Api::namespaced(ctx.client.clone(), &namespace);
     reconcile_inner(api, pod, ctx).await
 }
 
 pub async fn reconcile_inner(
     api: impl Destroyer,
     pod: Arc<Pod>,
-    ctx: Context<Data>,
+    ctx: Arc<Data>,
 ) -> Result<ReconcilerAction, Error> {
-    let pod_name = pod.name();
+    let pod_name = pod.name_any();
     let namespace = match pod.namespace() {
         Some(namespace) => namespace,
         None => "default".into(),
@@ -69,8 +69,8 @@ pub async fn reconcile_inner(
 
     // set up a recorder for publishing events to the Pod
     let recorder = Recorder::new(
-        ctx.get_ref().client.clone(),
-        ctx.get_ref().reporter.clone(),
+        ctx.client.clone(),
+        ctx.reporter.clone(),
         pod.object_ref(&()),
     );
 
@@ -88,7 +88,7 @@ pub async fn reconcile_inner(
     for sidecar in running_sidecars {
         let sidecar_name = sidecar.name;
         debug!("{pod_name}: found sidecar {sidecar_name}");
-        let action = match ctx.get_ref().actions.get(&sidecar_name) {
+        let action = match ctx.actions.get(&sidecar_name) {
             Some(action) => action,
             None => {
                 warn!("{pod_name}: missing defined action: {sidecar_name}");
@@ -124,7 +124,7 @@ pub async fn reconcile_inner(
     Ok(ReconcilerAction::await_change())
 }
 
-pub fn error_policy(_error: &Error, _ctx: Context<Data>) -> ReconcilerAction {
+pub fn error_policy(_error: &Error, _ctx: Arc<Data>) -> ReconcilerAction {
     ReconcilerAction::requeue(Duration::from_secs(30))
 }
 
@@ -147,7 +147,7 @@ mod tests {
     use kube::{
         api::ObjectMeta,
         client::ConfigExt,
-        runtime::{controller::Context, events::Reporter},
+        runtime::events::Reporter,
         Client, Config,
     };
     use tower::ServiceBuilder;
@@ -224,7 +224,7 @@ mod tests {
         let ret = reconcile_inner(
             destroyer,
             Arc::new(make_pod(name, Some(labels), extra_containers)),
-            Context::new(make_data()),
+            Arc::new(make_data()),
         )
         .await;
 
@@ -243,7 +243,7 @@ mod tests {
         let ret = reconcile_inner(
             destroyer,
             Arc::new(make_pod(name, Some(labels), vec![])),
-            Context::new(make_data()),
+            Arc::new(make_data()),
         )
         .await;
 
@@ -274,7 +274,7 @@ mod tests {
         let ret = reconcile_inner(
             destroyer,
             Arc::new(make_pod(name.clone(), Some(labels), extra_containers)),
-            Context::new(make_data()),
+            Arc::new(make_data()),
         )
         .await
         .unwrap_err();
@@ -296,7 +296,7 @@ mod tests {
         let ret = reconcile_inner(
             destroyer,
             Arc::new(make_pod(name.clone(), Some(labels), vec![])),
-            Context::new(make_data()),
+            Arc::new(make_data()),
         )
         .await
         .unwrap_err();

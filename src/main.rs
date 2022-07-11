@@ -5,7 +5,7 @@ use futures::StreamExt;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams},
-    runtime::{controller::Context, events::Reporter, Controller},
+    runtime::{events::Reporter, Controller},
     Client,
 };
 use std::env;
@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
         .run(
             reconciler::reconcile,
             reconciler::error_policy,
-            Context::new(reconciler::Data::new(client, reporter, actions)),
+            Arc::new(reconciler::Data::new(client, reporter, actions)),
         )
         .for_each(|res| async move {
             match res {
