@@ -5,6 +5,7 @@ metadata:
     team: aura
   annotations:
     nais.io/naisjob: "true"
+    "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"
   name: oh-no
   namespace: aura
 spec:
