@@ -36,6 +36,34 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: "oauth2accesstoken"
           password: "${{ steps.auth.outputs.access_token }}"
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git
+            target
+          key: musl-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Ensure cargo dirs exist
+        run: |
+          mkdir -p ~/.cargo/{git,registry}
+      - name: Test
+        run: |
+          docker run --rm -t \
+              --mount type=bind,source=${{ github.workspace }},target=/volume \
+              --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
+              --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
+              clux/muslrust:stable \
+              cargo test --release -- --test-threads 1
+      - name: Build binary
+        run: |
+          docker run --rm -t \
+              --mount type=bind,source=${{ github.workspace }},target=/volume \
+              --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
+              --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
+              clux/muslrust:stable \
+              cargo build --release
+          cp target/x86_64-unknown-linux-musl/release/hahaha .
       - name: Docker meta
         id: metadata
         uses: docker/metadata-action@v4
