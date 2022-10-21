@@ -7,7 +7,6 @@ metadata:
     {{- include "hahaha.labels" . | nindent 4 }}
 spec:
   image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-  imagePullPolicy: {{ .Values.image.pullPolicy }}
   replicas:
     min: 1
     max: 1
