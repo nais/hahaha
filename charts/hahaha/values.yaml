@@ -8,6 +8,6 @@ alert:
   enabled: false
 
 image:
-  repository: nginx
+  repository: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha
   # Overrides the image tag whose default is the chart appVersion.
   tag: "main"
