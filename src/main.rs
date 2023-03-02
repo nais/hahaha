@@ -16,7 +16,6 @@ use tracing_subscriber::prelude::*;
 
 mod actions;
 mod api;
-mod events;
 mod pod;
 mod prometheus;
 mod reconciler;

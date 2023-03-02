@@ -4,14 +4,14 @@ use k8s_openapi::api::core::v1::Pod;
 use kube::{
     runtime::{
         controller::{Action as ReconcilerAction},
-        events::Reporter,
+        events::{Reporter, Recorder, Event, EventType},
     },
     Api, Client, Resource, ResourceExt,
 };
 use thiserror::Error;
 use tracing::{debug, warn};
 
-use crate::{actions::Action, api::Destroyer, events::Recorder, pod::Sidecars, prometheus::*};
+use crate::{actions::Action, api::Destroyer, pod::Sidecars, prometheus::*};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -101,8 +101,13 @@ pub async fn reconcile_inner(
         let res = api.shutdown(action, &pod_name, &sidecar_name).await;
         if let Err(err) = res {
             if let Err(e) = recorder
-                .warn(format!("Unsuccessfully shut down container {sidecar_name}: {err}"))
-                .await
+                .publish(Event {
+                    action: "Killing".into(),
+                    reason: "Killing".into(),
+                    note: Some(format!("Unsuccessfully shut down container {sidecar_name}: {err}").into()),
+                    type_: EventType::Warning,
+                    secondary: None
+                }).await
             {
                 warn!("{pod_name}: couldn't publish Kubernetes Event: {e}");
                 TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
@@ -112,7 +117,13 @@ pub async fn reconcile_inner(
                 .inc();
             return Err(Error::SidecarShutdownFailed(pod_name, sidecar_name, err));
         }
-        if let Err(e) = recorder.info(format!("Shut down container {sidecar_name}")).await {
+        if let Err(e) = recorder.publish(Event {
+            action: "Killing".into(),
+            reason: "Killing".into(),
+            note: Some(format!("Shut down container {sidecar_name}").into()),
+            type_: EventType::Normal,
+            secondary: None
+        }).await {
             warn!("{pod_name}: couldn't publish Kubernetes Event: {e}");
             TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
         }
@@ -124,7 +135,7 @@ pub async fn reconcile_inner(
     Ok(ReconcilerAction::await_change())
 }
 
-pub fn error_policy(_error: &Error, _ctx: Arc<Data>) -> ReconcilerAction {
+pub fn error_policy(_pod: Arc<Pod>, _error: &Error, _ctx: Arc<Data>) -> ReconcilerAction {
     ReconcilerAction::requeue(Duration::from_secs(30))
 }
 
