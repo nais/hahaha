@@ -5,6 +5,7 @@ on:
       - main
     paths-ignore:
       - "charts/**"
+      - "*.md"
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
   IMAGE: hahaha
@@ -99,7 +100,7 @@ jobs:
       id-token: write
     env:
       REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
-      IMG: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha@@${{ needs.build_and_push.outputs.digest }}
+      IMG: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha@${{ needs.build_and_push.outputs.digest }}
       GOOGLE_SA_USER: gh-hahaha
     steps:
       - name: Checkout
