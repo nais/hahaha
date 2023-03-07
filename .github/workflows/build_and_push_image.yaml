@@ -90,7 +90,7 @@ jobs:
           cache-to: type=gha,mode=max
   slsafy:
     name: Sign and attest the images
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs:
       - build_and_push
     runs-on: ubuntu-latest
