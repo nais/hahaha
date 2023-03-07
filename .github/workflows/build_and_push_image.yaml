@@ -124,7 +124,7 @@ jobs:
           password: "${{ steps.auth.outputs.access_token }}"
       - name: Sign the container image
         run: echo "y" | cosign sign ${{ env.IMG }}
-        with:
+        env:
           IMG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build_and_push.outputs.digest }}
       - name: Setup Rust
         uses: ATiltedTree/setup-rust@749afc283f2b846eb90a670e757de9da4da091f7 # ratchet:ATiltedTree/setup-rust@v1
@@ -136,5 +136,5 @@ jobs:
           cargo cyclonedx --format json
       - name: Attest image
         run: echo "y" | cosign attest --predicate bom.json --type cyclonedx ${{ env.IMG }}
-        with:
+        env:
           IMG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build_and_push.outputs.digest }}
