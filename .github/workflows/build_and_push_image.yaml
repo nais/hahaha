@@ -90,7 +90,6 @@ jobs:
           cache-to: type=gha,mode=max
   slsafy:
     name: Sign and attest the images
-    if: github.ref == 'refs/heads/main'
     needs:
       - build_and_push
     runs-on: ubuntu-latest
@@ -100,7 +99,7 @@ jobs:
       id-token: write
     env:
       REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
-      IMAGE_NAME: hahaha
+      IMG: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha@@${{ needs.build_and_push.outputs.digest }}
       GOOGLE_SA_USER: gh-hahaha
     steps:
       - name: Checkout
@@ -124,8 +123,6 @@ jobs:
           password: "${{ steps.auth.outputs.access_token }}"
       - name: Sign the container image
         run: echo "y" | cosign sign ${{ env.IMG }}
-        env:
-          IMG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build_and_push.outputs.digest }}
       - name: Setup Rust
         uses: ATiltedTree/setup-rust@749afc283f2b846eb90a670e757de9da4da091f7 # ratchet:ATiltedTree/setup-rust@v1
         with:
@@ -136,5 +133,3 @@ jobs:
           cargo cyclonedx --format json
       - name: Attest image
         run: echo "y" | cosign attest --predicate bom.json --type cyclonedx ${{ env.IMG }}
-        env:
-          IMG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build_and_push.outputs.digest }}
