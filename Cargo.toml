@@ -33,3 +33,6 @@ lazy_static = "1.4"
 prometheus = "0.13"
 
 hostname = "^0.3"
+
+[profile.release]
+codegen-units=1

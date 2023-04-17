@@ -6,10 +6,7 @@ on:
     paths-ignore:
       - "charts/**"
       - "*.md"
-env:
-  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
-  IMAGE: hahaha
-  GOOGLE_SA_USER: gh-hahaha
+
 jobs:
   build_and_push:
     permissions:
@@ -21,116 +18,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # ratchet:actions/checkout@v3
-      - id: "auth"
-        name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@c4799db9111fba4461e9f9da8732e5057b394f72" # ratchet:google-github-actions/auth@v0.8.3
-        with:
-          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: "${{ env.GOOGLE_SA_USER }}@nais-io.iam.gserviceaccount.com"
-          token_format: "access_token"
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@f03ac48505955848960e80bbb68046aa35c7b9e7 # ratchet:docker/setup-buildx-action@v2
-      - name: Login to registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: "oauth2accesstoken"
-          password: "${{ steps.auth.outputs.access_token }}"
-      - uses: actions/cache@937d24475381cd9c75ae6db12cb4e79714b926ed # ratchet:actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-            target
-          key: musl-cargo-${{ hashFiles('**/Cargo.toml') }}
-      - name: Ensure cargo dirs exist
-        run: |
-          mkdir -p ~/.cargo/{git,registry}
-      - name: Test
-        run: |
-          docker run --rm -t \
-              --mount type=bind,source=${{ github.workspace }},target=/volume \
-              --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
-              --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
-              clux/muslrust:stable \
-              cargo test --release -- --test-threads 1
-      - name: Build binary
-        run: |
-          docker run --rm -t \
-              --mount type=bind,source=${{ github.workspace }},target=/volume \
-              --mount type=bind,source=$HOME/.cargo/registry,target=/root/.cargo/registry \
-              --mount type=bind,source=$HOME/.cargo/git,target=/root/.cargo/git \
-              clux/muslrust:stable \
-              cargo build --release
-          cp target/x86_64-unknown-linux-musl/release/hahaha .
-      - name: Docker meta
-        id: metadata
-        uses: docker/metadata-action@507c2f2dc502c992ad446e3d7a5dfbe311567a96 # ratchet:docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE }}
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
-            type=sha
-      - name: Build and push
-        id: build-push
-        uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # ratchet:docker/build-push-action@v3
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-  slsafy:
-    name: Sign and attest the images
-    needs:
-      - build_and_push
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    env:
-      REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
-      IMG: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha@${{ needs.build_and_push.outputs.digest }}
-      GOOGLE_SA_USER: gh-hahaha
-    steps:
-      - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # ratchet:actions/checkout@v3
       - name: Install cosign
-        uses: sigstore/cosign-installer@c3667d99424e7e6047999fb6246c0da843953c65 # ratchet:sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: 'v2.0.0'
-      - id: "auth"
-        name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@ef5d53e30bbcd8d0836f4288f5e50ff3e086997d" # ratchet:google-github-actions/auth@v1
+      - name: Verify runner image
+        run: cosign verify --certificate-identity "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" gcr.io/distroless/static-debian11:nonroot
+      - uses: nais/platform-build-push-sign@d5680102b2e7006e7b4184acc9604aa321176107 # ratchet:nais/platform-build-push-sign@main
+        id: build_push_sign
         with:
+          name: hahaha
+          dockerfile: Dockerfile
+          google_service_account: gh-hahaha
+          push: ${{ github.actor != 'dependabot[bot]' }}
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: "${{ env.GOOGLE_SA_USER }}@nais-io.iam.gserviceaccount.com"
-          token_format: "access_token"
-      - name: Login to Google Artifact Registry
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: "oauth2accesstoken"
-          password: "${{ steps.auth.outputs.access_token }}"
-      - name: Sign the container image
-        run: echo "y" | cosign sign ${{ env.IMG }}
-      - name: Setup Rust
-        uses: ATiltedTree/setup-rust@749afc283f2b846eb90a670e757de9da4da091f7 # ratchet:ATiltedTree/setup-rust@v1
-        with:
-          rust-version: stable
-      - name: Create SBOM
-        run: |
-          cargo install cargo-cyclonedx
-          cargo cyclonedx --format json
-      - name: Attest image
-        run: echo "y" | cosign attest --predicate bom.json --type cyclonedx ${{ env.IMG }}
