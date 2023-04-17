@@ -23,7 +23,7 @@ jobs:
         with:
           cosign-release: 'v2.0.0'
       - name: Verify runner image
-        run: cosign verify --certificate-identity "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" gcr.io/distroless/static-debian11:nonroot
+        run: cosign verify --certificate-oidc-issuer "https://accounts.google.com"  --certificate-identity "keyless@distroless.iam.gserviceaccount.com" gcr.io/distroless/static-debian11:nonroot
       - uses: nais/platform-build-push-sign@d5680102b2e7006e7b4184acc9604aa321176107 # ratchet:nais/platform-build-push-sign@main
         id: build_push_sign
         with:
