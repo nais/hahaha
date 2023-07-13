@@ -1,73 +1,36 @@
-use std::collections::BTreeMap;
-
+use hyper::http::Method;
+use hyper::Uri;
+use std::{collections::BTreeMap};
 /// Generate the action `BTreeMap`
 ///
 /// Modify this function to add or remove sidecar definitions and their associated shutdown procedures.
 pub fn generate() -> BTreeMap<String, Action> {
-    let mut actions = BTreeMap::new();
-
-    actions.exec("cloudsql-proxy", "kill -s INT 1");
-    actions.exec("vks-sidecar", "/bin/kill -s INT 1");
-    actions.exec("secure-logs-configmap-reload", "/bin/killall configmap-reload");
-    actions.portforward("linkerd-proxy", "POST", "/shutdown", 4191);
-    actions.portforward("secure-logs-fluentd", "GET", "/api/processes.killWorkers", 24444);
-    actions
+    BTreeMap::from([
+        (
+            "cloudsql-proxy".into(),
+            Action::Exec("kill -s INT 1".split(' ').map(String::from).collect()),
+        ),
+        (
+            "vks-sidecar".into(),
+            Action::Exec("/bin/kill -s INT 1".split(' ').map(String::from).collect()),
+        ),
+        (
+            "secure-logs-configmap-reload".into(),
+            Action::Exec("/bin/killall configmap-reload".split(' ').map(String::from).collect()),
+        ),
+        (
+            "linkerd-proxy".into(),
+            Action::Portforward(Method::POST, "/shutdown".parse::<Uri>().unwrap(), 4191),
+        ),
+        (
+            "secure-logs-fluentd".into(),
+            Action::Portforward(Method::GET, "/api/processes.killWorkers".parse::<Uri>().unwrap(), 24444),
+        ),
+    ])
 }
 
 #[derive(Debug)]
-pub enum ActionType {
-    Portforward,
-    Exec,
-    None,
-}
-
-impl Default for ActionType {
-    fn default() -> Self {
-        ActionType::None
-    }
-}
-
-#[derive(Default, Debug)]
-pub struct Action {
-    pub action_type: ActionType,
-    pub method: Option<String>,
-    pub path: Option<String>,
-    pub port: Option<u16>,
-    pub command: Option<String>,
-}
-
-/// Helper trait for inserting different `Action`s with different `ActionType`s into a `BTreeMap`
-///
-/// Using this trait will allow us to catch simple misconfigurations in Actions during compile time.
-trait ActionInsertions {
-    /// Inserts an action with `ActionType::Exec` into a `BTreeMap`
-    fn exec(&mut self, target_container: &str, command: &str);
-    /// Inserts an action with `ActionType::Portforward` into a `BTreeMap`
-    fn portforward(&mut self, target_container: &str, method: &str, path: &str, port: u16);
-}
-
-impl ActionInsertions for BTreeMap<String, Action> {
-    fn exec(&mut self, target_container: &str, command: &str) {
-        self.insert(
-            target_container.into(),
-            Action {
-                action_type: ActionType::Exec,
-                command: Some(command.into()),
-                ..Default::default()
-            },
-        );
-    }
-
-    fn portforward(&mut self, target_container: &str, method: &str, path: &str, port: u16) {
-        self.insert(
-            target_container.into(),
-            Action {
-                action_type: ActionType::Portforward,
-                method: Some(method.into()),
-                path: Some(path.into()),
-                port: Some(port.into()),
-                ..Default::default()
-            },
-        );
-    }
+pub enum Action {
+    Portforward(Method, Uri, u16),
+    Exec(Vec<String>),
 }
