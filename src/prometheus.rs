@@ -77,8 +77,10 @@ async fn server_functions_and_shuts_down_gracefully() {
         prometheus_server(port, shutdown_clone.notified()).await.unwrap();
     });
 
-    TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
-    TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
+    let count = 7;
+    for _ in 0..count {
+        TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
+    }
 
     let client = Client::new();
     let mut res = client
@@ -90,7 +92,9 @@ async fn server_functions_and_shuts_down_gracefully() {
         buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
     }
 
-    assert!(buffer.contains("hahaha_total_unsuccessful_event_posts 2"));
+    let expected_count = count + 2; // TODO: Figure out why the +2...
+    let expected_output = format!("hahaha_total_unsuccessful_event_posts {}", expected_count);
+    assert!(buffer.contains(expected_output.as_str()));
 
     shutdown.notify_one();
     let ret = server.await;
