@@ -1,2 +1,8 @@
 /target
 .idea/
+
+.env*
+
+# Nix stuff
+.direnv/
+result*
