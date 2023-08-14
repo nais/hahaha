@@ -27,7 +27,9 @@ static PROMETHEUS_PORT: u16 = 8999;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let rust_log_env = env::var("RUST_LOG").unwrap_or_else(|_| "hahaha=info,kube=warn".to_string());
-    let filter_layer = tracing_subscriber::EnvFilter::builder().with_regex(false).parse_lossy(&rust_log_env);
+    let filter_layer = tracing_subscriber::EnvFilter::builder()
+        .with_regex(false)
+        .parse_lossy(&rust_log_env);
     let format_layer = tracing_subscriber::fmt::layer().json().flatten_event(true);
     tracing_subscriber::registry()
         .with(filter_layer)
@@ -41,10 +43,7 @@ async fn main() -> anyhow::Result<()> {
     let lp = ListParams::default().labels("nais.io/naisjob=true");
 
     let h = hostname::get()?;
-    let host_name = match h.to_str() {
-        Some(s) => s,
-        None => "hahaha-1337", // consider dying here, this should never happen after all.
-    };
+    let host_name = h.to_str().unwrap_or("hahaha-1337");
 
     let reporter = Reporter {
         controller: "hahaha".into(),
@@ -64,7 +63,11 @@ async fn main() -> anyhow::Result<()> {
         .run(
             reconciler::reconcile,
             reconciler::error_policy,
-            Arc::new(reconciler::Data::new(client, reporter, actions)),
+            Arc::new(reconciler::Data {
+                client,
+                reporter,
+                actions,
+            }),
         )
         .for_each(|res| async move {
             match res {

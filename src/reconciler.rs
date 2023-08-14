@@ -3,8 +3,8 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     runtime::{
-        controller::{Action as ReconcilerAction},
-        events::{Reporter, Recorder, Event, EventType},
+        controller::Action as ReconcilerAction,
+        events::{Event, EventType, Recorder, Reporter},
     },
     Api, Client, Resource, ResourceExt,
 };
@@ -22,35 +22,18 @@ pub enum Error {
 }
 
 pub struct Data {
-    client: Client,
-    reporter: Reporter,
-    actions: BTreeMap<String, Action>,
-}
-
-impl Data {
-    pub fn new(client: Client, reporter: Reporter, actions: BTreeMap<String, Action>) -> Data {
-        Data {
-            client,
-            reporter,
-            actions,
-        }
-    }
+    pub(crate) client: Client,
+    pub(crate) reporter: Reporter,
+    pub(crate) actions: BTreeMap<String, Action>,
 }
 
 pub async fn reconcile(pod: Arc<Pod>, ctx: Arc<Data>) -> Result<ReconcilerAction, Error> {
-    let namespace = match pod.namespace() {
-        Some(namespace) => namespace,
-        None => "default".into(),
-    };
+    let namespace = pod.namespace().unwrap_or("default".into());
     let api: Api<Pod> = Api::namespaced(ctx.client.clone(), &namespace);
     reconcile_inner(api, pod, ctx).await
 }
 
-pub async fn reconcile_inner(
-    api: impl Destroyer,
-    pod: Arc<Pod>,
-    ctx: Arc<Data>,
-) -> Result<ReconcilerAction, Error> {
+pub async fn reconcile_inner(api: impl Destroyer, pod: Arc<Pod>, ctx: Arc<Data>) -> Result<ReconcilerAction, Error> {
     let pod_name = pod.name_any();
     let namespace = match pod.namespace() {
         Some(namespace) => namespace,
@@ -68,11 +51,7 @@ pub async fn reconcile_inner(
     }
 
     // set up a recorder for publishing events to the Pod
-    let recorder = Recorder::new(
-        ctx.client.clone(),
-        ctx.reporter.clone(),
-        pod.object_ref(&()),
-    );
+    let recorder = Recorder::new(ctx.client.clone(), ctx.reporter.clone(), pod.object_ref(&()));
 
     debug!("{pod_name}: needs help shutting down some residual containers");
 
@@ -88,26 +67,25 @@ pub async fn reconcile_inner(
     for sidecar in running_sidecars {
         let sidecar_name = sidecar.name;
         debug!("{pod_name}: found sidecar {sidecar_name}");
-        let action = match ctx.actions.get(&sidecar_name) {
-            Some(action) => action,
-            None => {
-                warn!("{pod_name}: missing defined action: {sidecar_name}");
-                UNSUPPORTED_SIDECARS
-                    .with_label_values(&[&sidecar_name, &job_name, &namespace])
-                    .inc();
-                continue;
-            }
+        let Some(action) = ctx.actions.get(&sidecar_name) else {
+            warn!("{pod_name}: missing defined action: {sidecar_name}");
+            UNSUPPORTED_SIDECARS
+                .with_label_values(&[&sidecar_name, &job_name, &namespace])
+                .inc();
+            continue;
         };
-        let res = api.shutdown(action, &pod_name, &sidecar_name).await;
-        if let Err(err) = res {
+
+        let res = api.shutdown(action, &pod_name, &sidecar_name);
+        if let Err(err) = res.await {
             if let Err(e) = recorder
                 .publish(Event {
                     action: "Killing".into(),
                     reason: "Killing".into(),
-                    note: Some(format!("Unsuccessfully shut down container {sidecar_name}: {err}").into()),
+                    note: Some(format!("Unsuccessfully shut down container {sidecar_name}: {err}")),
                     type_: EventType::Warning,
-                    secondary: None
-                }).await
+                    secondary: None,
+                })
+                .await
             {
                 warn!("{pod_name}: couldn't publish Kubernetes Event: {e}");
                 TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
@@ -117,13 +95,16 @@ pub async fn reconcile_inner(
                 .inc();
             return Err(Error::SidecarShutdownFailed(pod_name, sidecar_name, err));
         }
-        if let Err(e) = recorder.publish(Event {
-            action: "Killing".into(),
-            reason: "Killing".into(),
-            note: Some(format!("Shut down container {sidecar_name}").into()),
-            type_: EventType::Normal,
-            secondary: None
-        }).await {
+        if let Err(e) = recorder
+            .publish(Event {
+                action: "Killing".into(),
+                reason: "Killing".into(),
+                note: Some(format!("Shut down container {sidecar_name}")),
+                type_: EventType::Normal,
+                secondary: None,
+            })
+            .await
+        {
             warn!("{pod_name}: couldn't publish Kubernetes Event: {e}");
             TOTAL_UNSUCCESSFUL_EVENT_POSTS.inc();
         }
@@ -155,16 +136,11 @@ mod tests {
         apimachinery::pkg::apis::meta::v1::Time,
         chrono::Utc,
     };
-    use kube::{
-        api::ObjectMeta,
-        client::ConfigExt,
-        runtime::events::Reporter,
-        Client, Config,
-    };
+    use kube::{api::ObjectMeta, client::ConfigExt, runtime::events::Reporter, Client, Config};
     use tower::ServiceBuilder;
 
     /// creates a bogus kube client that doesn't connect anywhere useful
-    fn make_data() -> Data {  
+    fn make_data() -> Data {
         let config = Config::new("/".parse::<Uri>().unwrap());
         let service = ServiceBuilder::new()
             .layer(config.base_uri_layer())

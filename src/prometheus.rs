@@ -31,15 +31,14 @@ lazy_static! {
 }
 
 /// The function which triggers on any request to the server (incl. any path)
-async fn metric_service(_req: Request<Body>) -> hyper::Result<Response<Body>> {
+async fn metric_service(_req: Request<Body>) -> anyhow::Result<Response<Body>> {
     let encoder = TextEncoder::new();
     let mut buffer = vec![];
     let mf = prometheus::gather();
-    encoder.encode(&mf, &mut buffer).unwrap();
+    encoder.encode(&mf, &mut buffer)?;
     Ok(Response::builder()
         .header(hyper::header::CONTENT_TYPE, encoder.format_type())
-        .body(Body::from(buffer))
-        .unwrap())
+        .body(Body::from(buffer))?)
 }
 
 /// The function which spawns the prometheus server
@@ -87,7 +86,7 @@ async fn server_functions_and_shuts_down_gracefully() {
         .unwrap();
     let mut buffer = String::new();
     while let Some(chunk) = res.body_mut().data().await {
-        buffer += &String::from_utf8_lossy(&chunk.unwrap().to_vec());
+        buffer += &String::from_utf8_lossy(&chunk.unwrap());
     }
 
     assert!(buffer.contains("hahaha_total_unsuccessful_event_posts 2"));

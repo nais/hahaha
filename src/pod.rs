@@ -19,7 +19,7 @@ trait SidecarStates {
     fn main_container(&self) -> Result<ContainerStatus>;
 }
 
-/// Extension trait for ContainerStatus
+/// Extension trait for `ContainerStatus`
 trait ContainerState {
     /// Helper to determine if a Container is terminated
     fn is_terminated(&self) -> bool;
@@ -28,7 +28,7 @@ trait ContainerState {
 impl Sidecars for Pod {
     fn sidecars(&self) -> anyhow::Result<Vec<ContainerStatus>> {
         let sidecars = self.running_sidecars()?;
-        if sidecars.len() == 0 {
+        if sidecars.is_empty() {
             // if there's nothing to be found, we're probably still starting up.
             return Ok(sidecars);
         }
@@ -40,15 +40,13 @@ impl Sidecars for Pod {
     }
 
     fn job_name(&self) -> anyhow::Result<String> {
-        let labels = match &self.metadata.labels {
-            Some(l) => l,
-            None => return Err(anyhow!("no labels found on pod")),
+        let Some(labels) =  &self.metadata.labels else {
+            return Err(anyhow!("no labels found on pod"));
         };
-        let app_name = match labels.get("app") {
-            Some(name) => name,
-            None => return Err(anyhow!("no app name found on pod")),
+        let Some(app_name) = labels.get("app") else {
+            return Err(anyhow!("no app name found on pod"));
         };
-        return Ok(app_name.into());
+        Ok(app_name.into())
     }
 }
 
@@ -65,10 +63,10 @@ impl SidecarStates for Pod {
 
     fn main_container(&self) -> Result<ContainerStatus> {
         let app = JobPod::from(self)?;
-        match app.statuses.iter().find(|c| c.name == app.name) {
-            Some(c) => Ok(c.clone()),
-            None => Err(anyhow!("couldn't determine main container")),
-        }
+        app.statuses
+            .iter()
+            .find(|c| c.name == app.name)
+            .map_or_else(|| Err(anyhow!("couldn't determine main containter")), |c| Ok(c.clone()))
     }
 }
 
@@ -78,27 +76,25 @@ struct JobPod {
 }
 
 impl JobPod {
-    pub fn from(pod: &Pod) -> Result<JobPod> {
-        let labels = match &pod.metadata.labels {
-            Some(l) => l,
-            None => return Err(anyhow!("no labels found on pod")),
-        };
-        let app_name = match labels.get("app") {
-            Some(name) => name,
-            None => return Err(anyhow!("no app name found on pod")),
-        };
-        let pod_status = match &pod.status {
-            Some(spec) => spec,
-            None => return Err(anyhow!("no spec found on pod")),
-        };
+    pub fn from(pod: &Pod) -> Result<Self> {
+        let app_name = &pod
+            .metadata
+            .labels
+            .as_ref()
+            .ok_or_else(|| anyhow!("no labels found on pod"))?
+            .get("app")
+            .ok_or_else(|| anyhow!("no app name found on pod"))?;
 
-        let container_statuses: Vec<ContainerStatus> = match &pod_status.container_statuses {
-            Some(status) => status.to_vec(),
-            None => Vec::new(), // if no container statuses are found, return an empty Vec. we're probably starting up
-        };
+        let container_statuses: Vec<ContainerStatus> = pod
+            .status
+            .as_ref()
+            .ok_or_else(|| anyhow!("no spec found on pod"))?
+            .container_statuses
+            .as_ref()
+            .map_or_else(Vec::new, Clone::clone);
 
-        Ok(JobPod {
-            name: app_name.into(),
+        Ok(Self {
+            name: (*app_name).to_string(),
             statuses: container_statuses,
         })
     }
@@ -108,11 +104,6 @@ impl ContainerState for ContainerStatus {
     // We could probably see if the termination reason is
     // a good one to avoid taking unnecessary measures.. but whatever
     fn is_terminated(&self) -> bool {
-        let last_state = match &self.state {
-            Some(state) => state,
-            None => return false,
-        };
-
-        last_state.terminated.is_some()
+        self.state.as_ref().map_or(false, |c| c.terminated.is_some())
     }
 }
