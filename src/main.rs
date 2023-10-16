@@ -4,8 +4,8 @@ extern crate lazy_static;
 use futures::StreamExt;
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
-    api::{Api, ListParams},
-    runtime::{events::Reporter, Controller},
+    api::Api,
+    runtime::{events::Reporter, watcher, Controller},
     Client,
 };
 use std::env;
@@ -40,7 +40,6 @@ async fn main() -> anyhow::Result<()> {
     let client = Client::try_default().await?;
 
     let pods: Api<Pod> = Api::all(client.clone());
-    let lp = ListParams::default().labels("nais.io/naisjob=true");
 
     let h = hostname::get()?;
     let host_name = h.to_str().unwrap_or("hahaha-1337");
@@ -58,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
             .unwrap();
     });
 
-    Controller::new(pods, lp)
+    Controller::new(pods, watcher::Config::default().labels("nais.io/naisjob=true"))
         .shutdown_on_signal()
         .run(
             reconciler::reconcile,
