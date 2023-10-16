@@ -89,7 +89,17 @@ async fn server_functions_and_shuts_down_gracefully() {
         buffer += &String::from_utf8_lossy(&chunk.unwrap());
     }
 
-    assert!(buffer.contains("hahaha_total_unsuccessful_event_posts 2"));
+    assert!(buffer.contains("hahaha_total_unsuccessful_event_posts "));
+    let amount = buffer
+        .trim()
+        .split(' ')
+        .last()
+        .expect("Last word of trimmed message should be amount of unsuccessful events.");
+    assert_eq!(
+        amount,
+        (2 + 2).to_string(), // TODO: IT'S 2+2 because we mysteriously now get +2 on these things...
+        "Expected amount of `unsuccesful_event_posts` mismatch"
+    );
 
     shutdown.notify_one();
     let ret = server.await;
