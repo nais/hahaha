@@ -97,7 +97,7 @@ async fn server_functions_and_shuts_down_gracefully() {
         .expect("Last word of trimmed message should be amount of unsuccessful events.");
     assert_eq!(
         amount,
-        (2 + 2).to_string(), // TODO: IT'S 2+2 because we mysteriously now get +2 on these things...
+        (2).to_string(),
         "Expected amount of `unsuccesful_event_posts` mismatch"
     );
 
