@@ -1,5 +1,6 @@
 name: Build and deploy
 on:
+  pull-request:
   push:
     branches:
       - main
