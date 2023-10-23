@@ -1,8 +1,11 @@
 /target
 .idea/
+.vscode
 
 .env*
 
 # Nix stuff
 .direnv/
 result*
+
+config.toml

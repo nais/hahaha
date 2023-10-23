@@ -40,7 +40,7 @@ impl Sidecars for Pod {
     }
 
     fn job_name(&self) -> anyhow::Result<String> {
-        let Some(labels) =  &self.metadata.labels else {
+        let Some(labels) = &self.metadata.labels else {
             return Err(anyhow!("no labels found on pod"));
         };
         let Some(app_name) = labels.get("app") else {
