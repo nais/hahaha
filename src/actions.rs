@@ -1,6 +1,6 @@
 use hyper::http::Method;
 use hyper::Uri;
-use std::{collections::BTreeMap};
+use std::collections::BTreeMap;
 /// Generate the action `BTreeMap`
 ///
 /// Modify this function to add or remove sidecar definitions and their associated shutdown procedures.
@@ -17,6 +17,10 @@ pub fn generate() -> BTreeMap<String, Action> {
         (
             "secure-logs-configmap-reload".into(),
             Action::Exec("/bin/killall configmap-reload".split(' ').map(String::from).collect()),
+        ),
+        (
+            "istio-proxy".into(),
+            Action::Portforward(Method::POST, "/quitquitquit".parse::<Uri>().unwrap(), 15000),
         ),
         (
             "linkerd-proxy".into(),

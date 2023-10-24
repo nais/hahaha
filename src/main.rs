@@ -36,6 +36,8 @@ async fn main() -> anyhow::Result<()> {
         .with(format_layer)
         .init();
 
+    let label_env = env::var("WATCH_SELECTOR").unwrap_or("nais.io/naisjob=true".to_string());
+
     let actions = actions::generate();
     let client = Client::try_default().await?;
 
@@ -57,7 +59,7 @@ async fn main() -> anyhow::Result<()> {
             .unwrap();
     });
 
-    Controller::new(pods, watcher::Config::default().labels("nais.io/naisjob=true"))
+    Controller::new(pods, watcher::Config::default().labels(&label_env))
         .shutdown_on_signal()
         .run(
             reconciler::reconcile,
