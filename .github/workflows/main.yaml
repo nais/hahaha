@@ -25,6 +25,7 @@ jobs:
           name: ${{ env.NAME }}
           google_service_account: gh-${{ env.NAME }}
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          multi-platform: true
           push: true
 
       - uses: azure/setup-helm@v3
