@@ -2,14 +2,9 @@ dependencies:
   - allOf:
       - naiserator
 environmentKinds:
-  - tenant
   - onprem
   - legacy
 values:
-  alert.enabled:
-    displayName: Enable alert
-    config:
-      type: bool
   apiServerCIDR:
     description: CIDR for the API server
     displayName: API server CIDR

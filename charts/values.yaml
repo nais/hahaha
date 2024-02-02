@@ -4,9 +4,6 @@
 
 apiServerCIDR: 172.16.0.2/32
 
-alert:
-  enabled: false
-
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/hahaha
   # Overrides the image tag whose default is the chart appVersion.
