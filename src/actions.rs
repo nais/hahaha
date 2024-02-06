@@ -8,7 +8,7 @@ pub fn generate() -> BTreeMap<String, Action> {
     BTreeMap::from([
         (
             "cloudsql-proxy".into(),
-            Action::Exec("kill -s INT 1".split(' ').map(String::from).collect()),
+            Action::Portforward(Method::POST, "/quitquitquit".parse::<Uri>().unwrap(), 9091),
         ),
         (
             "vks-sidecar".into(),
