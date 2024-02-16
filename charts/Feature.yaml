@@ -4,6 +4,7 @@ dependencies:
 environmentKinds:
   - onprem
   - legacy
+  - tenant
 values:
   apiServerCIDR:
     description: CIDR for the API server
