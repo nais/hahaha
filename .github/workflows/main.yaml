@@ -1,8 +1,12 @@
 name: Build and deploy
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches:
-      - main
+
 env:
   NAME: hahaha
   FEATURE_REPOSITORY: oci://europe-north1-docker.pkg.dev/nais-io/nais/feature
@@ -26,7 +30,7 @@ jobs:
           google_service_account: gh-${{ env.NAME }}
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           multi-platform: true
-          push: true
+          push: "${{ github.ref == 'refs/heads/main' }}"
 
       - uses: azure/setup-helm@v3
         name: "Setup Helm"
@@ -39,10 +43,12 @@ jobs:
           helm package charts
 
       - name: Push Chart
+        if: github.ref == 'refs/heads/main'
         run: |-
           helm push ${{ env.NAME }}*.tgz ${{ env.FEATURE_REPOSITORY }}
 
   rollout:
+    if: github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main'
     needs:
       - build_and_push
     runs-on: fasit-deploy

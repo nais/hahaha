@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      opentelemetry:
+        patterns:
+          - opentelemetry*
+          - tracing-opentelemetry
+      k8s:
+        patterns:
+          - kube
+          - k8s-openapi
+      axum:
+        patterns:
+          - axum
+          - axum-server
+          - axum-test
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
