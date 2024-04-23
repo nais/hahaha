@@ -34,7 +34,7 @@ prometheus = "0.13"
 hostname = "^0.3"
 
 [dev-dependencies]
-mockall = "0.11"
+mockall = "0.12"
 
 [profile.release]
 codegen-units=1
