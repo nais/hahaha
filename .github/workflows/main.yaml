@@ -32,7 +32,7 @@ jobs:
           multi-platform: true
           push: "${{ github.ref == 'refs/heads/main' }}"
 
-      - uses: azure/setup-helm@v3
+      - uses: azure/setup-helm@v4
         name: "Setup Helm"
         with:
           version: "v3.12.0"
