@@ -39,7 +39,8 @@ jobs:
 
       - name: Build Chart
         run: |-
-          sed -i "s/^version: .*/version: ${{ steps.build-push-sign.outputs.version }}/g" charts/Chart.yaml
+          yq e '.version = "${{ steps.build-push-sign.outputs.version }}"' --inplace "charts/Chart.yaml"
+          yq e '.image.tag = "${{ steps.build-push-sign.outputs.version }}"' --inplace "charts/values.yaml"
           helm package charts
 
       - name: Push Chart
