@@ -7,10 +7,9 @@ environmentKinds:
   - tenant
 values:
   apiServerCIDR:
-    description: CIDR for the API server
-    displayName: API server CIDR
-    config:
-      type: string
+    displayName: API server cidr
+    computed:
+      template: '"{{ .Env.apiserver_endpoint }}/32"'
   image.tag:
     displayName: Image tag
     config:
