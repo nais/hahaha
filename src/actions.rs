@@ -15,12 +15,20 @@ pub fn generate() -> BTreeMap<String, Action> {
             Action::Exec("/bin/kill -s INT 1".split(' ').map(String::from).collect()),
         ),
         (
+            "secure-logs-configmap-reload".into(),
+            Action::Exec("/bin/killall configmap-reload".split(' ').map(String::from).collect()),
+        ),
+        (
             "istio-proxy".into(),
             Action::Portforward(Method::POST, "/quitquitquit".parse::<Uri>().unwrap(), 15000),
         ),
         (
             "linkerd-proxy".into(),
             Action::Portforward(Method::POST, "/shutdown".parse::<Uri>().unwrap(), 4191),
+        ),
+        (
+            "secure-logs-fluentd".into(),
+            Action::Portforward(Method::GET, "/api/processes.killWorkers".parse::<Uri>().unwrap(), 24444),
         ),
     ])
 }
