@@ -19,8 +19,6 @@ You can view what HAHAHA tries to do to these sidecars when encountered in [acti
 | ---------------------------- | ------------------------------------------------------------------------- |
 | linkerd-proxy                | runs if your Naisjob runs in GCP                                          |
 | cloudsql-proxy               | runs if your Naisjob provisions databases through `spec.gcp.sqlInstances` |
-| secure-logs-fluentd          | runs if your Naisjob has `spec.secureLogs.enabled` set to `true`          |
-| secure-logs-configmap-reload | runs if your Naisjob has `spec.secureLogs.enabled` set to `true`          |
 | vks-sidecar                  | runs if your Naisjob has `spec.vault.sidecar` set to `true`               |
 
 ### Generic
