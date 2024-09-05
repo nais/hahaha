@@ -25,7 +25,7 @@ async-trait = "0.1"
 
 # portforward client and prometheus serving
 hyper = { version = "0.14", features = ["server", "runtime"] }
-tower = "0.4"
+tower = "0.5"
 
 # prometheus metrics
 lazy_static = "1.5"
