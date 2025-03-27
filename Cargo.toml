@@ -29,7 +29,7 @@ tower = "0.4"
 
 # prometheus metrics
 lazy_static = "1.5"
-prometheus = "0.13"
+prometheus = "0.14"
 
 hostname = "^0.4"
 
