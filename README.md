@@ -1,5 +1,11 @@
 # HAHAHA
 
+> [!WARNING]
+>
+> HAHAHA has been succeeded by the [native sidecar containers feature](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/) in Kubernetes.
+>
+> The native sidecar container feature gate has been available and enabled in beta since Kubernetes v1.29 and was made generally available in v1.33.
+
 Your leader has been eliminated, it's time for the rest of you to die!
 
 Pods that also contain sidecars might never run to completion.
